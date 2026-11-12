@@ -187,9 +187,9 @@ h1 .w2{position:relative;z-index:4}
 .keel{transform-origin:30% 0;animation:keel .9s ease-in-out infinite alternate}
 @keyframes flap{from{transform:scaleY(1)}to{transform:scaleY(.8)}}
 @keyframes keel{from{transform:rotate(-5deg)}to{transform:rotate(6deg)}}
-.note{position:absolute;pointer-events:none;color:var(--ink);animation:note 3s ease-out forwards;line-height:0}
+.note{position:absolute;pointer-events:none;color:var(--ink);animation:note 2s ease-out forwards;line-height:0;transform:rotate(var(--r,0deg))}
 .note svg{display:block;overflow:visible;fill:currentColor;stroke:currentColor}
-@keyframes note{0%{opacity:0;transform:scale(.5)}4%{opacity:1}9%{transform:scale(1.12)}16%{transform:scale(1)}65%{opacity:1}100%{opacity:0;transform:translate(-8px,-10px)}}
+@keyframes note{0%{opacity:0;transform:rotate(var(--r)) scale(.5)}6%{opacity:1}12%{transform:rotate(var(--r)) scale(1.12)}22%{transform:translate(-1px,-1px) rotate(var(--r)) scale(1)}60%{opacity:1;transform:translate(-7px,-8px) rotate(calc(var(--r) + var(--w)))}100%{opacity:0;transform:translate(-14px,-17px) rotate(calc(var(--r) - var(--w)))}}
 @media (prefers-reduced-motion:reduce){.plane .mv{animation:none}.note{animation:none}}
 @container (max-width:400px){.cur .pick button{padding:4px 6px;font-size:10.5px;white-space:nowrap}.cur .cn{font-size:19px}.cur .chd{flex-wrap:nowrap;gap:6px}.cur .pick{flex-wrap:nowrap;gap:3px}}
 @container (max-width:315px){.cur .chd{flex-wrap:wrap}}

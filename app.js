@@ -511,7 +511,7 @@
     };
     fit(); addEventListener('resize', fit); if (document.fonts) document.fonts.ready.then(fit);
     const puff = (x, y, pair) => {
-      const ph = plane.getBoundingClientRect().height || 30, s = Math.max(7, ph * (pair ? 0.23 : 0.2)), el = h('span', { class: 'note', style: `left:${x - s}px;top:${y - s * 0.7}px;color:var(--p${n % 3})` });
+      const ph = plane.getBoundingClientRect().height || 30, s = Math.max(7, ph * (pair ? 0.23 : 0.2)), el = h('span', { class: 'note', style: `left:${x - s}px;top:${y - s * 0.7}px;color:var(--p${n % 3});--r:${(Math.random() * 20 - 10).toFixed(1)}deg;--w:${(Math.random() < 0.5 ? -1 : 1) * 6}deg` });
       el.innerHTML = NOTES[pair ? 1 : 0].replace('{s}', s.toFixed(1)).replace('{s2}', (s * 5 / 3).toFixed(1)).replace(/\{h\}/g, (s * 1.5).toFixed(1));
       if (!still) el.addEventListener('animationend', () => el.remove());
       sky.append(el);
