@@ -511,7 +511,7 @@
     };
     fit(); addEventListener('resize', fit); if (document.fonts) document.fonts.ready.then(fit);
     const puff = (x, y, pair) => {
-      const ph = plane.getBoundingClientRect().height || 30, s = Math.max(7, ph * (pair ? 0.18 : 0.2)), el = h('span', { class: 'note', style: `left:${x - s}px;top:${y - s * 0.7}px;color:var(--p${n % 3});--r:${(Math.random() * 20 - 10).toFixed(1)}deg;--w:${(Math.random() < 0.5 ? -1 : 1) * 6}deg` });
+      const ph = plane.getBoundingClientRect().height || 30, s = Math.max(7, ph * (pair ? 0.18 : 0.2)), el = h('span', { class: 'note', style: `left:${x - s}px;top:${y - s * 0.75}px;color:var(--p${n % 3});--r:${(Math.random() * 20 - 10).toFixed(1)}deg;--w:${(Math.random() < 0.5 ? -1 : 1) * 6}deg` });
       el.innerHTML = NOTES[pair ? 1 : 0].replace('{s}', s.toFixed(1)).replace('{s2}', (s * 5 / 3).toFixed(1)).replace(/\{h\}/g, (s * 1.5).toFixed(1));
       if (!still) el.addEventListener('animationend', () => el.remove());
       sky.append(el);
@@ -541,7 +541,8 @@
       place(R, p);
       if (!document.hidden && u < 1 && now >= beat) {
         const i = n++ % 3;
-        puff(p.x - R.pw * 0.47, p.y + R.ph * 0.05 + (i === 1 ? -5 : i === 2 ? 4 : 0), i === 2);
+        const rad = p.ang * Math.PI / 180, d = R.pw * 0.47;
+        puff(p.x - d * Math.cos(rad), p.y - d * Math.sin(rad) + (i === 1 ? -2 : i === 2 ? 2 : 0), i === 2);
         beat = now + BEAT[i];
       }
       requestAnimationFrame(loop);
