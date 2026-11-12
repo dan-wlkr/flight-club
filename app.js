@@ -176,20 +176,22 @@
     const labW = 92, pad = 11, pitch = 1.18, sq = W0 < 420 ? 18 : 22, per = Math.max(1, Math.floor((W0 - labW) / (sq * pitch)));
     const rowsOf = (n) => Math.max(1, Math.ceil(n / per));
     const { svg, W } = svgIn(el, d3.sum(decs, (d) => rowsOf(d.ts.length) * sq * pitch + pad), 'One square for each track, grouped by release decade and coloured by who added it');
-    const cells = [];
+    const cells = [], bands = new Map();
     let y = 0;
     decs.forEach((dr) => {
       if (y > 0) svg.append('line').attr('x1', 0).attr('x2', W).attr('y1', y).attr('y2', y).style('stroke', 'var(--hair)');
       const y0 = y + pad / 2;
-      const lab = svg.append('g').attr('class', 'hit').attr('tabindex', 0).attr('role', 'link').attr('aria-label', `${dr.d}s, ${plural(dr.ts.length, 'track')}`)
+      const lab = svg.append('g').attr('class', 'hit trow').attr('tabindex', 0).attr('role', 'link').attr('aria-label', `${dr.d}s, ${plural(dr.ts.length, 'track')}`)
         .on('click', () => go('decade-' + dr.d)).on('keydown', (ev) => { if (ev.key === 'Enter') go('decade-' + dr.d); });
-      lab.append('rect').attr('y', y0).attr('width', labW - 6).attr('height', sq).style('fill', 'transparent');
+      lab.append('rect').attr('class', 'bg').attr('x', -8).attr('y', y + (y > 0 ? 1 : 0)).attr('width', W + 8).attr('height', rowsOf(dr.ts.length) * sq * pitch + pad - (y > 0 ? 1 : 0));
+      bands.set(dr.d, lab);
       lab.append('text').attr('y', y0 + sq / 2).attr('dy', '0.36em').style('font-size', '17px').style('font-weight', 800).style('letter-spacing', '-0.03em').text(dr.d + 's');
       lab.append('text').attr('x', 62).attr('y', y0 + sq / 2).attr('dy', '0.36em').style('font-size', '11px').style('opacity', 0.72).text(dr.ts.length);
       dr.ts.forEach((t, i) => cells.push({ t, x: labW + (i % per) * sq * pitch, y: y0 + Math.floor(i / per) * sq * pitch }));
       y += rowsOf(dr.ts.length) * sq * pitch + pad;
     });
     const g = svg.append('g').selectAll('g').data(cells).join('g').attr('transform', (d) => `translate(${d.x},${d.y})`);
+    g.on('pointerenter.row', (ev, d) => bands.get(d.t.decade)?.classed('on', true)).on('pointerleave.row', (ev, d) => bands.get(d.t.decade)?.classed('on', false));
     track(g, (d) => d.t).append('rect').attr('width', sq).attr('height', sq).attr('class', 'sq a-pop').style('--i', (d, i) => i).style('--st', '9ms').style('transform-box', 'fill-box').style('transform-origin', '50% 50%').style('fill', (d) => col(d.t.by));
   };
 
