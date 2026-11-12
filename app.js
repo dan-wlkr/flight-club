@@ -498,8 +498,8 @@
     if (!sky || !fly) return;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const NOTES = [
-      '<svg viewBox="0 0 12 17" width="{s}" height="{h}"><ellipse cx="4" cy="13" rx="3.3" ry="2.5" transform="rotate(-20 4 13)" stroke="none"/><path d="M6.9 12.6V1.6c1 3 4.1 3.2 4.1 6.4" fill="none" stroke-width="1.5"/></svg>',
-      '<svg viewBox="0 0 18 17" width="{s2}" height="{h}"><ellipse cx="4" cy="13" rx="3.2" ry="2.4" transform="rotate(-20 4 13)" stroke="none"/><ellipse cx="14" cy="12" rx="3.2" ry="2.4" transform="rotate(-20 14 12)" stroke="none"/><path d="M6.8 12.6V3L16.8 1.6V11.6M6.8 5.2L16.8 3.8" fill="none" stroke-width="1.5"/></svg>'
+      '<svg viewBox="0 0 12 18" width="{s}" height="{h}" stroke="none"><ellipse cx="4.2" cy="14.2" rx="3.7" ry="2.8" transform="rotate(-22 4.2 14.2)"/><rect x="6.7" y="1" width="1.7" height="13.4"/><path d="M8.4 1C8.6 5.6 12 6.6 11.6 11.2C10.4 8.6 8.6 8.4 8.4 7.6Z"/></svg>',
+      '<svg viewBox="0 0 20 18" width="{s2}" height="{h}" stroke="none"><ellipse cx="4.2" cy="14.2" rx="3.7" ry="2.8" transform="rotate(-22 4.2 14.2)"/><ellipse cx="15.4" cy="14.2" rx="3.7" ry="2.8" transform="rotate(-22 15.4 14.2)"/><rect x="6.7" y="1" width="1.7" height="13.4"/><rect x="17.9" y="1" width="1.7" height="13.4"/><rect x="6.7" y="1" width="12.9" height="2.8"/></svg>'
     ];
     let n = 0;
     const plane = $('#plane'), title = $('#title'), box = sky.parentElement;
@@ -512,7 +512,7 @@
     fit(); addEventListener('resize', fit); if (document.fonts) document.fonts.ready.then(fit);
     const puff = (x, y, pair) => {
       const ph = plane.getBoundingClientRect().height || 30, s = Math.max(8, ph * (pair ? 0.3 : 0.26)), el = h('span', { class: 'note', style: `left:${x - s}px;top:${y - s * 0.7}px;color:var(--p${n % 3})` });
-      el.innerHTML = NOTES[pair ? 1 : 0].replace('{s}', s.toFixed(1)).replace('{s2}', (s * 1.5).toFixed(1)).replace(/\{h\}/g, (s * 1.4).toFixed(1));
+      el.innerHTML = NOTES[pair ? 1 : 0].replace('{s}', s.toFixed(1)).replace('{s2}', (s * 5 / 3).toFixed(1)).replace(/\{h\}/g, (s * 1.5).toFixed(1));
       if (!still) el.addEventListener('animationend', () => el.remove());
       sky.append(el);
     };
