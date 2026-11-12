@@ -212,7 +212,7 @@ h1 .w2{position:relative;z-index:4}
 @keyframes note{0%{opacity:0;transform:rotate(var(--r)) scale(.5)}6%{opacity:1}12%{transform:rotate(var(--r)) scale(1.12)}22%{transform:translate(-1px,-1px) rotate(var(--r)) scale(1)}60%{opacity:1;transform:translate(-7px,-8px) rotate(calc(var(--r) + var(--w)))}100%{opacity:0;transform:translate(-14px,-17px) rotate(calc(var(--r) - var(--w)))}}
 @media (prefers-reduced-motion:reduce){.plane .mv{animation:none}.note{animation:none}}
 @container (max-width:400px){.cur .pick button{padding:4px 6px;font-size:10.5px;white-space:nowrap}.cur .cn{font-size:19px}.cur .chd{flex-wrap:nowrap;gap:6px}.cur .pick{flex-wrap:nowrap;gap:3px}}
-@container (max-width:315px){.cur .chd{flex-wrap:wrap}}
+@container (max-width:300px){.cur .chd{flex-wrap:wrap}.cur .pick{flex:1 0 100%;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}.cur .pick button{text-align:center;padding:5px 0;font-size:11.5px}}
 @media (hover:hover){
 .chip:not([aria-pressed=true]):hover{background:color-mix(in srgb,var(--c,var(--ink)) 14%,var(--paper))}
 .cur{transition:background .3s}
