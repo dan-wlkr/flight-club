@@ -498,8 +498,8 @@
     if (!sky || !fly) return;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const NOTES = [
-      '<svg viewBox="0 0 12 18" width="{s}" height="{h}" stroke="none"><ellipse cx="4.2" cy="14.2" rx="3.7" ry="2.8" transform="rotate(-22 4.2 14.2)"/><rect x="6.7" y="1" width="1.7" height="13.4"/><path d="M8.4 1C8.6 5.6 12 6.6 11.6 11.2C10.4 8.6 8.6 8.4 8.4 7.6Z"/></svg>',
-      '<svg viewBox="0 0 20 18" width="{s2}" height="{h}" stroke="none"><ellipse cx="4.2" cy="14.2" rx="3.7" ry="2.8" transform="rotate(-22 4.2 14.2)"/><ellipse cx="15.4" cy="14.2" rx="3.7" ry="2.8" transform="rotate(-22 15.4 14.2)"/><rect x="6.7" y="1" width="1.7" height="13.4"/><rect x="17.9" y="1" width="1.7" height="13.4"/><rect x="6.7" y="1" width="12.9" height="2.8"/></svg>'
+      '<svg viewBox="0 0 12 18" width="{s}" height="{h}" shape-rendering="geometricPrecision" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="4" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 4 14.2)" stroke="none"/><path d="M6.8 13.6V1.8" fill="none" stroke-width="1.2"/><path d="M6.8 1.8C7.3 4.9 11.2 5.6 10.5 10C9.7 7.7 7.6 7.3 6.8 6.5Z" stroke-width=".6"/></svg>',
+      '<svg viewBox="0 0 20 18" width="{s2}" height="{h}" shape-rendering="geometricPrecision" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="4" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 4 14.2)" stroke="none"/><ellipse cx="14.6" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 14.6 14.2)" stroke="none"/><path d="M6.8 13.6V2.4H17.4V13.6" fill="none" stroke-width="1.2"/><path d="M6.8 2.4H17.4V3.6H6.8Z" stroke-width="1.2"/></svg>'
     ];
     let n = 0;
     const plane = $('#plane'), title = $('#title'), box = sky.parentElement;
@@ -511,7 +511,7 @@
     };
     fit(); addEventListener('resize', fit); if (document.fonts) document.fonts.ready.then(fit);
     const puff = (x, y, pair) => {
-      const ph = plane.getBoundingClientRect().height || 30, s = Math.max(8, ph * (pair ? 0.3 : 0.26)), el = h('span', { class: 'note', style: `left:${x - s}px;top:${y - s * 0.7}px;color:var(--p${n % 3})` });
+      const ph = plane.getBoundingClientRect().height || 30, s = Math.max(7, ph * (pair ? 0.23 : 0.2)), el = h('span', { class: 'note', style: `left:${x - s}px;top:${y - s * 0.7}px;color:var(--p${n % 3})` });
       el.innerHTML = NOTES[pair ? 1 : 0].replace('{s}', s.toFixed(1)).replace('{s2}', (s * 5 / 3).toFixed(1)).replace(/\{h\}/g, (s * 1.5).toFixed(1));
       if (!still) el.addEventListener('animationend', () => el.remove());
       sky.append(el);
