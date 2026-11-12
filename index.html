@@ -82,6 +82,8 @@ h2{margin:0;font-family:var(--serif);font-weight:700;font-size:22px;line-height:
 .cur.dim{opacity:.35}
 .hit{cursor:pointer}
 .trow .bg{fill:transparent;transition:fill .3s}
+.trow .rin{transition:transform .3s var(--ease)}
+.trow:focus-visible .rin{transform:translateX(8px)}
 .trow:focus-visible{outline:none}
 .trow:focus-visible .bg{fill:var(--paper-2);stroke:var(--ink);stroke-width:2}
 .sq{transition:transform .27s var(--ease)}
@@ -226,7 +228,8 @@ h1 .w2{position:relative;z-index:4}
 .row:hover .ar{transform:translateX(3px);opacity:1}
 .pr:hover{padding-left:8px;background:var(--paper-2)}
 .pr:hover .pb{left:44px}
-.trow:hover .bg,.trow.on .bg{fill:var(--paper-2)}
+.trow:hover .bg{fill:var(--paper-2)}
+.trow:hover .rin{transform:translateX(8px)}
 .lnk:hover{background:var(--paper-2)}
 .tag:hover{transform:translateY(-2px)}
 .spot:hover{transform:translateX(4px)}

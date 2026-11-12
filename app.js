@@ -176,23 +176,21 @@
     const labW = 92, pad = 11, pitch = 1.18, sq = W0 < 420 ? 18 : 22, per = Math.max(1, Math.floor((W0 - labW) / (sq * pitch)));
     const rowsOf = (n) => Math.max(1, Math.ceil(n / per));
     const { svg, W } = svgIn(el, d3.sum(decs, (d) => rowsOf(d.ts.length) * sq * pitch + pad), 'One square for each track, grouped by release decade and coloured by who added it');
-    const cells = [], bands = new Map();
-    let y = 0;
+    let y = 0, k = 0;
     decs.forEach((dr) => {
       if (y > 0) svg.append('line').attr('x1', 0).attr('x2', W).attr('y1', y).attr('y2', y).style('stroke', 'var(--hair)');
       const y0 = y + pad / 2;
       const lab = svg.append('g').attr('class', 'hit trow').attr('tabindex', 0).attr('role', 'link').attr('aria-label', `${dr.d}s, ${plural(dr.ts.length, 'track')}`)
-        .on('click', () => go('decade-' + dr.d)).on('keydown', (ev) => { if (ev.key === 'Enter') go('decade-' + dr.d); });
+        .on('click', (ev) => { if (!ev.target.closest('.sq')) go('decade-' + dr.d); }).on('keydown', (ev) => { if (ev.key === 'Enter' && ev.target === ev.currentTarget) go('decade-' + dr.d); });
       lab.append('rect').attr('class', 'bg').attr('x', -8).attr('y', y + (y > 0 ? 1 : 0)).attr('width', W + 8).attr('height', rowsOf(dr.ts.length) * sq * pitch + pad - (y > 0 ? 1 : 0));
-      bands.set(dr.d, lab);
-      lab.append('text').attr('y', y0 + sq / 2).attr('dy', '0.36em').style('font-size', '17px').style('font-weight', 800).style('letter-spacing', '-0.03em').text(dr.d + 's');
-      lab.append('text').attr('x', 62).attr('y', y0 + sq / 2).attr('dy', '0.36em').style('font-size', '11px').style('opacity', 0.72).text(dr.ts.length);
-      dr.ts.forEach((t, i) => cells.push({ t, x: labW + (i % per) * sq * pitch, y: y0 + Math.floor(i / per) * sq * pitch }));
+      const r = lab.append('g').attr('class', 'rin');
+      r.append('text').attr('y', y0 + sq / 2).attr('dy', '0.36em').style('font-size', '17px').style('font-weight', 800).style('letter-spacing', '-0.03em').text(dr.d + 's');
+      r.append('text').attr('x', 62).attr('y', y0 + sq / 2).attr('dy', '0.36em').style('font-size', '11px').style('opacity', 0.72).text(dr.ts.length);
+      const cells = dr.ts.map((t, i) => ({ t, k: k++, x: labW + (i % per) * sq * pitch, y: y0 + Math.floor(i / per) * sq * pitch }));
+      const g = r.append('g').selectAll('g').data(cells).join('g').attr('transform', (d) => `translate(${d.x},${d.y})`);
+      track(g, (d) => d.t).append('rect').attr('width', sq).attr('height', sq).attr('class', 'sq a-pop').style('--i', (d) => d.k).style('--st', '9ms').style('transform-box', 'fill-box').style('transform-origin', '50% 50%').style('fill', (d) => col(d.t.by));
       y += rowsOf(dr.ts.length) * sq * pitch + pad;
     });
-    const g = svg.append('g').selectAll('g').data(cells).join('g').attr('transform', (d) => `translate(${d.x},${d.y})`);
-    g.on('pointerenter.row', (ev, d) => bands.get(d.t.decade)?.classed('on', true)).on('pointerleave.row', (ev, d) => bands.get(d.t.decade)?.classed('on', false));
-    track(g, (d) => d.t).append('rect').attr('width', sq).attr('height', sq).attr('class', 'sq a-pop').style('--i', (d, i) => i).style('--st', '9ms').style('transform-box', 'fill-box').style('transform-origin', '50% 50%').style('fill', (d) => col(d.t.by));
   };
 
   const drawLengths = () => {
@@ -298,24 +296,25 @@
       const g = svg.append('g').attr('class', 'hit trow').attr('tabindex', 0).attr('role', 'link').attr('aria-label', `${name}, ${plural(ts.length, 'track')}`)
         .on('click', () => go('country-' + slug(name))).on('keydown', (ev) => { if (ev.key === 'Enter') go('country-' + slug(name)); });
       g.append('rect').attr('class', 'bg').attr('x', -8).attr('y', y + 1).attr('width', W + 8).attr('height', rowH - 1);
+      const r = g.append('g').attr('class', 'rin');
       const fy = cy - 7.5;
       if (FLAGS[name]) {
         const id = 'fl-' + slug(name);
         svg.append('clipPath').attr('id', id).append('rect').attr('width', 20).attr('height', 13);
-        const fg = g.append('g').attr('transform', `translate(0,${fy}) scale(1.15)`);
+        const fg = r.append('g').attr('transform', `translate(0,${fy}) scale(1.15)`);
         FLAGS[name](fg.append('g').attr('clip-path', `url(#${id})`));
         fg.append('rect').attr('width', 20).attr('height', 13).style('fill', 'none').style('stroke', 'var(--ink)').style('stroke-opacity', 0.55).style('stroke-width', 0.7);
       } else {
-        g.append('rect').attr('y', fy).attr('width', 20).attr('height', 13).style('fill', 'none').style('stroke', 'var(--ink)').style('stroke-opacity', 0.4).style('stroke-dasharray', '2 2');
+        r.append('rect').attr('y', fy).attr('width', 20).attr('height', 13).style('fill', 'none').style('stroke', 'var(--ink)').style('stroke-opacity', 0.4).style('stroke-dasharray', '2 2');
       }
-      g.append('text').attr('x', 31).attr('y', cy).attr('dy', '0.36em').style('font-size', narrow ? '12.5px' : '14px').style('font-weight', 700).text(name);
-      g.append('text').attr('x', x0 - 10).attr('y', cy).attr('dy', '0.36em').attr('text-anchor', 'end').style('font-size', '14px').style('font-weight', 800).text(ts.length);
+      r.append('text').attr('x', 31).attr('y', cy).attr('dy', '0.36em').style('font-size', narrow ? '12.5px' : '14px').style('font-weight', 700).text(name);
+      r.append('text').attr('x', x0 - 10).attr('y', cy).attr('dy', '0.36em').attr('text-anchor', 'end').style('font-size', '14px').style('font-weight', 800).text(ts.length);
       let cx = x0;
       PEOPLE.forEach((p) => {
         const n = cnt(ts, p);
         if (!n) return;
         const w = Math.sqrt(n) * unit;
-        g.append('rect').attr('data-p', p).attr('x', cx + 0.75).attr('y', cy - bh / 2).attr('width', Math.max(1, w - 1.5)).attr('height', bh)
+        r.append('rect').attr('data-p', p).attr('x', cx + 0.75).attr('y', cy - bh / 2).attr('width', Math.max(1, w - 1.5)).attr('height', bh)
           .attr('class', 'a-grow').style('--i', i).style('--st', '40ms').style('fill', col(p))
           .on('pointerenter pointermove', (ev) => { if (ev.pointerType === 'mouse') showTip(ev, [name, `${plural(n, 'track')} added by ${p}`]); }).on('pointerleave', hideTip);
         cx += w;
@@ -355,10 +354,11 @@
     const g = svg.append('g').selectAll('g').data(rows).join('g').attr('transform', (d, i) => `translate(0,${i * rowH + rowH / 2})`).attr('class', 'hit trow')
       .attr('tabindex', 0).attr('role', 'link').on('click', (ev, d) => go('label-' + slug(d[0]))).on('keydown', (ev, d) => { if (ev.key === 'Enter') go('label-' + slug(d[0])); });
     g.append('rect').attr('class', 'bg').attr('x', -8).attr('y', -rowH / 2 + 1).attr('width', W + 8).attr('height', rowH - 2);
-    g.append('text').attr('dy', '0.35em').style('font-size', '11.5px').style('font-weight', 600).text((d) => d[0]);
-    g.append('line').attr('x1', x0).attr('x2', (d) => x(d[1].length)).attr('class', 'a-grow').style('--i', (d, i) => i).style('stroke', 'var(--ink)').style('stroke-width', 1.8);
-    g.append('circle').attr('cx', (d) => x(d[1].length)).attr('r', 7).attr('class', 'a-pop').style('--i', (d, i) => i + 8).style('--st', '40ms').style('fill', 'var(--ink)');
-    g.append('text').attr('x', (d) => x(d[1].length) + 12).attr('dy', '0.35em').style('font-size', '12.5px').style('font-weight', 800).text((d) => d[1].length);
+    const r = g.append('g').attr('class', 'rin');
+    r.append('text').attr('dy', '0.35em').style('font-size', '11.5px').style('font-weight', 600).text((d) => d[0]);
+    r.append('line').attr('x1', x0).attr('x2', (d) => x(d[1].length)).attr('class', 'a-grow').style('--i', (d, i) => i).style('stroke', 'var(--ink)').style('stroke-width', 1.8);
+    r.append('circle').attr('cx', (d) => x(d[1].length)).attr('r', 7).attr('class', 'a-pop').style('--i', (d, i) => i + 8).style('--st', '40ms').style('fill', 'var(--ink)');
+    r.append('text').attr('x', (d) => x(d[1].length) + 12).attr('dy', '0.35em').style('font-size', '12.5px').style('font-weight', 800).text((d) => d[1].length);
     svg.append('line').attr('x1', x0).attr('x2', x0).attr('y2', H).style('stroke', 'var(--ink)').style('stroke-width', 1.4);
     hover(g, (d) => [`${d[0]}: ${plural(d[1].length, 'track')}`, [...new Set(d[1].map((t) => t.ar[0]))].join(', ')]);
   };
