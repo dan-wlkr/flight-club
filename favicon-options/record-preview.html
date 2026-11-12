@@ -1,0 +1,13 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Option 6: record variations</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;900&display=swap" rel="stylesheet">
+<style>body{margin:0;padding:28px;background:#f3eee4;color:#151413;font-family:Archivo,Arial,sans-serif}
+h1{font-weight:900;text-transform:uppercase;letter-spacing:-.04em;margin:0 0 18px;border-top:6px solid #151413;padding-top:10px}
+.g{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.c{border:1px solid #151413;padding:14px}
+.n{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px}
+.big{width:96px;height:96px;display:block;margin-bottom:12px}
+.tab{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px 8px 0 0;font-size:12px;margin-top:6px;width:150px}
+.tab img{width:16px;height:16px}.l{background:#dfe1e5;color:#222}.d{background:#35363a;color:#eee}
+.row{display:flex;gap:10px;align-items:end}.row img:nth-child(1){width:32px}.row img:nth-child(2){width:16px}</style></head><body>
+<h1>Option 6: record variations</h1><div class="g" id="g"></div>
+<script>const f=['6-record','6a-record-bold-label','6b-record-paper','6c-record-rings','6d-record-sleeve','6e-record-sun-label','6f-record-horizon'];
+g.innerHTML=f.map(n=>`<div class="c"><div class="n">${n.replace(/-/g,' ')}</div><img class="big" src="${n}.svg"><div class="row"><img src="${n}.svg"><img src="${n}.svg"></div><div class="tab l"><img src="${n}.svg">Flight Club</div><div class="tab d"><img src="${n}.svg">Flight Club</div></div>`).join('')</script></body></html>
