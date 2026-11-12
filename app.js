@@ -493,7 +493,7 @@
   addEventListener('hashchange', route);
 
   // ---------- plane and notes ----------
-  (() => {
+  const startPlane = () => {
     const sky = $('#sky'), fly = $('#fly');
     if (!sky || !fly) return;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -548,7 +548,7 @@
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
-  })();
+  };
 
   const chipsEl = $('#chips'), stick = () => chipsEl.classList.toggle('stuck', chipsEl.getBoundingClientRect().top <= 0.5 && scrollY > 0);
   addEventListener('scroll', stick, { passive: true }); addEventListener('resize', stick);
@@ -564,7 +564,6 @@
   drawList();
   $('#sort').addEventListener('change', () => { state.shown = 8; drawList(); });
   $('#more').addEventListener('click', () => { state.shown = state.shown >= $$('#list .row').length && $$('#list .row').length >= T.filter((t) => !state.who || t.by === state.who).length ? 8 : state.shown + 10; drawList(); });
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTitle);
   let lastW = innerWidth, timer;
   addEventListener('resize', () => { clearTimeout(timer); timer = setTimeout(() => { fitTitle(); if (innerWidth !== lastW) { lastW = innerWidth; drawCharts(); } }, 150); });
   const io = new IntersectionObserver((entries) => entries.forEach((e) => {
@@ -573,6 +572,16 @@
     io.unobserve(e.target);
     setTimeout(() => e.target.classList.remove('play'), 2600);
   }), { threshold: 0.2 });
-  $$('.pn').forEach((s) => io.observe(s));
   route();
+  // Hold the page back until the fonts are in, so the first visit doesn't jump about as they swap in; then fade in and start the motion.
+  const fonts = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
+  Promise.race([fonts, new Promise((r) => setTimeout(r, 2500))]).then(() => {
+    fitTitle(); drawCharts();
+    requestAnimationFrame(() => {
+      document.documentElement.classList.remove('loading');
+      $$('.pn').forEach((s) => io.observe(s));
+      startPlane();
+    });
+  });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTitle);
 })();
