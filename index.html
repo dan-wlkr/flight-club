@@ -15,7 +15,7 @@
 .loader{position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:50;transition:opacity .3s ease,visibility 0s .3s}
 html:not(.loading) .loader{opacity:0;visibility:hidden}
 .ld{position:relative;font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:.14em;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink)}
-.ld .nt{position:absolute;left:50%;top:50%;width:8px;height:12px;margin:-6px 0 0 -4px;opacity:0;fill:currentColor;stroke:currentColor;animation:ldn 2.4s ease-in-out infinite backwards;animation-delay:var(--d)}
+.ld .nt{position:absolute;left:50%;top:50%;width:8px;height:12px;margin:-6px 0 0 -4px;opacity:0;fill:currentColor;stroke:currentColor;animation:ldn 1.8s ease-in-out infinite backwards;animation-delay:var(--d)}
 .ld .nt.nt2{width:13px;margin-left:-6px}
 @keyframes ldn{0%{opacity:0;transform:translate(var(--x),var(--y)) rotate(var(--r)) scale(.7)}25%,55%{opacity:.9}100%{opacity:0;transform:translate(calc(var(--x) - 4px),calc(var(--y) - 9px)) rotate(var(--r)) scale(1)}}
 @media (prefers-reduced-motion:reduce){.ld .nt{animation:none;opacity:.8;transform:translate(var(--x),var(--y))}}
@@ -252,17 +252,22 @@ h1 .w2{position:relative;z-index:4}
 </style>
 </head>
 <body>
-<div class="loader" aria-hidden="true"><div class="ld"><svg class="nt" viewBox="0 0 12 18" style="--x:-34px;--y:-12px;--r:-8deg;--d:0s;color:var(--p0)"><ellipse cx="4" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 4 14.2)" stroke="none"/><path d="M6.8 13.6V1.8" fill="none" stroke-width="1.2"/><path d="M6.8 1.8C7.3 4.9 11.2 5.6 10.5 10C9.7 7.7 7.6 7.3 6.8 6.5Z" stroke-width=".6"/></svg><svg class="nt nt2" viewBox="0 0 20 18" style="--x:30px;--y:-16px;--r:6deg;--d:.6s;color:var(--p1)"><ellipse cx="4" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 4 14.2)" stroke="none"/><ellipse cx="14.6" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 14.6 14.2)" stroke="none"/><path d="M6.8 13.6V2.4H17.4V13.6" fill="none" stroke-width="1.2"/><path d="M6.8 2.4H17.4V3.6H6.8Z" stroke-width="1.2"/></svg><svg class="nt" viewBox="0 0 12 18" style="--x:-22px;--y:16px;--r:5deg;--d:1.2s;color:var(--p2)"><ellipse cx="4" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 4 14.2)" stroke="none"/><path d="M6.8 13.6V1.8" fill="none" stroke-width="1.2"/><path d="M6.8 1.8C7.3 4.9 11.2 5.6 10.5 10C9.7 7.7 7.6 7.3 6.8 6.5Z" stroke-width=".6"/></svg><svg class="nt" viewBox="0 0 12 18" style="--x:38px;--y:12px;--r:-6deg;--d:1.8s;color:var(--p0)"><ellipse cx="4" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 4 14.2)" stroke="none"/><path d="M6.8 13.6V1.8" fill="none" stroke-width="1.2"/><path d="M6.8 1.8C7.3 4.9 11.2 5.6 10.5 10C9.7 7.7 7.6 7.3 6.8 6.5Z" stroke-width=".6"/></svg><svg class="nt nt2" viewBox="0 0 20 18" style="--x:2px;--y:-26px;--r:-4deg;--d:.9s;color:var(--p2)"><ellipse cx="4" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 4 14.2)" stroke="none"/><ellipse cx="14.6" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 14.6 14.2)" stroke="none"/><path d="M6.8 13.6V2.4H17.4V13.6" fill="none" stroke-width="1.2"/><path d="M6.8 2.4H17.4V3.6H6.8Z" stroke-width="1.2"/></svg><span id="pct">0%</span></div></div>
+<div class="loader" aria-hidden="true"><div class="ld"><svg class="nt" viewBox="0 0 12 18" style="--x:-34px;--y:-12px;--r:-8deg;--d:0s;color:var(--p0)"><ellipse cx="4" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 4 14.2)" stroke="none"/><path d="M6.8 13.6V1.8" fill="none" stroke-width="1.2"/><path d="M6.8 1.8C7.3 4.9 11.2 5.6 10.5 10C9.7 7.7 7.6 7.3 6.8 6.5Z" stroke-width=".6"/></svg><svg class="nt nt2" viewBox="0 0 20 18" style="--x:30px;--y:-16px;--r:6deg;--d:.3s;color:var(--p1)"><ellipse cx="4" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 4 14.2)" stroke="none"/><ellipse cx="14.6" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 14.6 14.2)" stroke="none"/><path d="M6.8 13.6V2.4H17.4V13.6" fill="none" stroke-width="1.2"/><path d="M6.8 2.4H17.4V3.6H6.8Z" stroke-width="1.2"/></svg><svg class="nt" viewBox="0 0 12 18" style="--x:-22px;--y:16px;--r:5deg;--d:.6s;color:var(--p2)"><ellipse cx="4" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 4 14.2)" stroke="none"/><path d="M6.8 13.6V1.8" fill="none" stroke-width="1.2"/><path d="M6.8 1.8C7.3 4.9 11.2 5.6 10.5 10C9.7 7.7 7.6 7.3 6.8 6.5Z" stroke-width=".6"/></svg><svg class="nt" viewBox="0 0 12 18" style="--x:38px;--y:12px;--r:-6deg;--d:.9s;color:var(--p0)"><ellipse cx="4" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 4 14.2)" stroke="none"/><path d="M6.8 13.6V1.8" fill="none" stroke-width="1.2"/><path d="M6.8 1.8C7.3 4.9 11.2 5.6 10.5 10C9.7 7.7 7.6 7.3 6.8 6.5Z" stroke-width=".6"/></svg><svg class="nt nt2" viewBox="0 0 20 18" style="--x:2px;--y:-26px;--r:-4deg;--d:1.2s;color:var(--p2)"><ellipse cx="4" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 4 14.2)" stroke="none"/><ellipse cx="14.6" cy="14.2" rx="3.1" ry="2.3" transform="rotate(-22 14.6 14.2)" stroke="none"/><path d="M6.8 13.6V2.4H17.4V13.6" fill="none" stroke-width="1.2"/><path d="M6.8 2.4H17.4V3.6H6.8Z" stroke-width="1.2"/></svg><span id="pct">0%</span></div></div>
 <script>(function(){
-  // A gentle count while the page gets ready: eases towards 95%, then runs up to 100% once the app says it is done.
-  var el = document.getElementById('pct'), root = document.documentElement, t0 = performance.now(), p = 0, end = null, cb = null;
-  window.fcDone = function(f){ cb = f; end = performance.now(); setTimeout(function(){ if (cb) { var g = cb; cb = null; g(); } }, 700); };
+  // A gentle count while the page gets ready. It always takes at least MIN ms to reach 100%, so it reads as a count rather than a flash;
+  // it holds at 95% if the page is still loading, then runs on to 100% once the app says it is done.
+  var MIN = 1500, el = document.getElementById('pct'), root = document.documentElement, t0 = performance.now(), p = 0, end = null, cb = null;
+  var ease = function(x){ return x < .5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; };
+  var finish = function(){ if (cb) { var f = cb; cb = null; f(); } };
+  window.fcDone = function(f){ cb = f; end = performance.now(); setTimeout(finish, Math.max(0, t0 + MIN - end) + 900); };
   function tick(now){
     if (!root.classList.contains('loading') && !cb) { el.textContent = '100%'; return; }
-    var target = end == null ? 95 * (1 - Math.exp(-(now - t0) / 900)) : p + (100 - p) * Math.min(1, (now - end) / 250);
+    var base = 100 * ease(Math.min(1, (now - t0) / MIN)), target;
+    if (end == null) target = Math.min(base, 95);
+    else { var from = Math.max(end, t0 + MIN); target = now > from ? Math.max(base, p + (100 - p) * Math.min(1, (now - from) / 300)) : base; }
     p = Math.max(p, target);
     el.textContent = Math.floor(p) + '%';
-    if (end != null && now - end >= 250) { el.textContent = '100%'; var f = cb; cb = null; setTimeout(f, 120); return; }
+    if (p >= 100) { setTimeout(finish, 180); return; }
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
