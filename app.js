@@ -521,7 +521,7 @@
       const s = sky.getBoundingClientRect(), t = title.getBoundingClientRect(), ph = parseFloat(getComputedStyle(sky).getPropertyValue('--ph')) || 30, pw = ph * 2.214, W = s.width, narrow = W < 600;
       const cy = t.top - s.top + t.height * 0.5, A = Math.max(8, Math.min(t.height * 0.62, cy - ph * 0.45, s.height - cy - ph * 0.45)), waves = Math.max(1, W / (narrow ? 300 : 520));
       const w2 = $('h1 .w2'), split = w2 ? w2.getBoundingClientRect().left - s.left : W * 0.55;
-      return { W, pw, ph, cy, A, split, waves, dur: (W + 2 * pw) / (narrow ? 62 : 85) };
+      return { W, pw, ph, cy, A, split, waves, dur: (W + 2 * pw) / (narrow ? 48 : 66) };
     };
     const at = (R, u) => {
       const ph = 2 * Math.PI * R.waves * u - Math.PI / 2, x = -R.pw + (R.W + 2 * R.pw) * u, y = R.cy + R.A * Math.sin(ph);
@@ -535,7 +535,7 @@
       return;
     }
     let t0 = performance.now(), beat = 0;
-    const BEAT = [260, 260, 640], gap = 3000;
+    const BEAT = [340, 340, 830], gap = 3000;
     const loop = (now) => {
       const R = route(), el = (now - t0) % (R.dur * 1000 + gap), u = Math.min(1, el / (R.dur * 1000)), p = at(R, u);
       place(R, p);
@@ -570,7 +570,7 @@
     if (!e.isIntersecting) return;
     e.target.classList.add('play');
     io.unobserve(e.target);
-    setTimeout(() => e.target.classList.remove('play'), 2600);
+    setTimeout(() => e.target.classList.remove('play'), 4500);
   }), { threshold: 0.2 });
   route();
   // Hold the page back until the fonts are in, so the first visit doesn't jump about as they swap in; then fade in and start the motion.
