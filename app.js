@@ -531,7 +531,7 @@
     const place = (R, p) => { fly.style.transform = `translate(${(p.x - R.pw / 2).toFixed(1)}px,${(p.y - R.ph / 2).toFixed(1)}px) rotate(${p.ang.toFixed(1)}deg)`;  };
     if (still) {
       const R = route(), p = at(R, 0.6); p.ang = 0; place(R, p);
-      [0, 1, 2, 3].forEach((i) => puff(p.x - R.pw * 0.7 - i * R.pw * 0.55, p.y + (i % 2 ? -R.ph * 0.2 : R.ph * 0.1), i === 2));
+      [0, 1, 2, 3].forEach((i) => puff(p.x - R.pw * 0.52 - i * R.pw * 0.4, p.y + (i % 2 ? -R.ph * 0.2 : R.ph * 0.1), i === 2));
       return;
     }
     let t0 = performance.now(), beat = 0;
@@ -541,7 +541,7 @@
       place(R, p);
       if (!document.hidden && u < 1 && now >= beat) {
         const i = n++ % 3;
-        puff(p.x - R.pw * 0.55, p.y + R.ph * 0.05 + (i === 1 ? -5 : i === 2 ? 4 : 0), i === 2);
+        puff(p.x - R.pw * 0.4, p.y + R.ph * 0.05 + (i === 1 ? -5 : i === 2 ? 4 : 0), i === 2);
         beat = now + BEAT[i];
       }
       requestAnimationFrame(loop);
