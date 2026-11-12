@@ -577,11 +577,12 @@
   const fonts = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
   Promise.race([fonts, new Promise((r) => setTimeout(r, 2500))]).then(() => {
     fitTitle(); drawCharts();
-    requestAnimationFrame(() => {
+    const go = () => {
       document.documentElement.classList.remove('loading');
       $$('.pn').forEach((s) => io.observe(s));
       startPlane();
-    });
+    };
+    requestAnimationFrame(() => (window.fcDone ? window.fcDone(go) : go()));
   });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTitle);
 })();
