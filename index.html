@@ -12,6 +12,12 @@
 .wrap{transition:opacity .4s ease}
 .loading .wrap{opacity:0}
 .loading h1 .w{animation:none!important}
+.loader{--ph:26px;--sw:2px;position:fixed;inset:0;display:grid;place-items:center;pointer-events:none;z-index:50;transition:opacity .3s ease,visibility 0s .3s}
+html:not(.loading) .loader{opacity:0;visibility:hidden}
+.loader .orb{width:0;height:0;animation:orbit 1.4s linear infinite}
+.loader .plane{transform:translate(-50%,-50%) translateY(-34px)}
+@keyframes orbit{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.loader .orb{animation:none}}
 :root{
   /* One visual world: a printed data sheet. Paper, ink, three curator inks and a yellow for everything else. Single column of ruled panels, with a drawer for detail. */
   --paper:#f3eee4;--paper-2:#ebe4d6;--ink:#151413;--p0:#e2462a;--p1:#2a57d4;--p2:#14855a;--sun:#f3b300;
@@ -245,6 +251,11 @@ h1 .w2{position:relative;z-index:4}
 </style>
 </head>
 <body>
+<div class="loader" aria-hidden="true"><div class="orb"><svg class="plane" viewBox="0 0 124 56">
+  <path class="o mv wingA" d="M8 9l110 18H30z"/>
+  <path class="o mv keel" d="M30 27l-6 22l20-14z"/>
+  <path class="s mv wingB" d="M30 27h88L14 46z"/>
+</svg></div></div>
 <div class="wrap" id="app">
   <header class="mast">
     <div class="skyrule"><div class="sky" id="sky" aria-hidden="true">

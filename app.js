@@ -534,12 +534,38 @@
       [0, 1, 2, 3].forEach((i) => puff(p.x - R.pw * 0.6 - i * R.pw * 0.4, p.y + (i % 2 ? -R.ph * 0.2 : R.ph * 0.1), i === 2));
       return;
     }
-    let t0 = performance.now(), beat = 0;
+    // The entrance: in from the left under the title, a full loop-the-loop around it, then out to the right.
+    const lap = (R) => {
+      const s = sky.getBoundingClientRect(), f = ($('#fit') || title).getBoundingClientRect(), t = title.getBoundingClientRect();
+      const cx = f.left - s.left + f.width / 2, cy = R.cy, rx = f.width / 2 + R.pw * 0.35, ry = t.height / 2 + R.ph * 0.6, by = cy + ry;
+      const pts = [];
+      for (let i = 0; i <= 20; i++) pts.push([-R.pw + (cx + R.pw) * i / 20, by]);
+      for (let i = 1; i <= 240; i++) { const th = Math.PI / 2 - 2 * Math.PI * i / 240; pts.push([cx + rx * Math.cos(th), cy + ry * Math.sin(th)]); }
+      for (let i = 1; i <= 20; i++) pts.push([cx + (R.W + R.pw - cx) * i / 20, by]);
+      const len = [0];
+      for (let i = 1; i < pts.length; i++) len.push(len[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+      const L = len[len.length - 1];
+      return { dur: Math.max(3.5, Math.min(5.5, L / 700)), at: (u) => {
+        const d = Math.min(1, Math.max(0, u)) * L;
+        let i = 1; while (i < len.length - 1 && len[i] < d) i++;
+        const k = (d - len[i - 1]) / ((len[i] - len[i - 1]) || 1), a = pts[i - 1], b = pts[i];
+        return { x: a[0] + (b[0] - a[0]) * k, y: a[1] + (b[1] - a[1]) * k, ang: Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI };
+      } };
+    };
+    let t0 = 0, beat = 0, intro = performance.now();
     const BEAT = [260, 260, 640], gap = 3000;
     const loop = (now) => {
-      const R = route(), el = (now - t0) % (R.dur * 1000 + gap), u = Math.min(1, el / (R.dur * 1000)), p = at(R, u);
+      const R = route();
+      let p, u;
+      if (intro != null) {
+        const I = lap(R);
+        u = (now - intro) / (I.dur * 1000);
+        if (u >= 1) { intro = null; t0 = now + gap; }
+        else p = I.at(u);
+      }
+      if (!p) { const el = (now - t0) % (R.dur * 1000 + gap); u = Math.min(1, el / (R.dur * 1000)); p = at(R, u); }
       place(R, p);
-      if (!document.hidden && u < 1 && now >= beat) {
+      if (!document.hidden && u >= 0 && u < 1 && now >= beat) {
         const i = n++ % 3;
         const rad = p.ang * Math.PI / 180, d = R.pw * 0.47;
         puff(p.x - d * Math.cos(rad), p.y - d * Math.sin(rad) + (i === 1 ? -2 : i === 2 ? 2 : 0), i === 2);
