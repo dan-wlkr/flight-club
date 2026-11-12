@@ -88,7 +88,7 @@
   };
   const drawStats = () => {
     const lo = d3.min(S, (t) => t.year), hi = d3.max(S, (t) => t.year);
-    $('#range').textContent = `#1 to #${T.length}`;
+    $('#range').replaceChildren(h('span', { class: 'sl' }, 'Songs '), `#1 to #${T.length}`);
     const weeks = Math.floor((d3.max(S, (t) => +t.at) - d3.min(S, (t) => +t.at)) / 864e5 / 7) + 1;
     $('#weeks').textContent = weeks;
     const stats = [[S.length, 'Tracks'], [new Set(S.flatMap((t) => t.ar)).size, 'Artists'], [LABELS.size, 'Labels'], [hi - lo, 'Years']];
