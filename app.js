@@ -123,16 +123,29 @@
     ];
     $('#curators').replaceChildren(...PEOPLE.map((p, i) => {
       const w = WHO[p], big = h('div', { class: 'cb' }), song = h('div', { class: 'ct' });
-      const btns = PICKS.map(([name, pick, fmt]) => h('button', { type: 'button', 'aria-pressed': 'false', onclick: () => set(name) }, name));
+      const btns = PICKS.map(([name]) => h('button', { type: 'button', 'aria-pressed': 'false', onclick: () => set(name) }, name));
+      const thumb = h('span', { class: 'th', 'aria-hidden': 'true' }), pick = h('div', { class: 'pick', role: 'group', 'aria-label': 'Headline song' }, thumb, ...btns);
+      let cur = -1;
+      const place = () => { const b = btns[cur]; if (!b || !b.offsetWidth) return; thumb.style.cssText = `width:${b.offsetWidth}px;height:${b.offsetHeight}px;transform:translate(${b.offsetLeft}px,${b.offsetTop}px)`; if (!thumb.classList.contains('on')) requestAnimationFrame(() => thumb.classList.add('on')); };
+      new ResizeObserver(place).observe(pick);
+      const fill = (t, k) => { big.textContent = PICKS[k][2](t); big.classList.toggle('sm', String(big.textContent).length > 5); song.replaceChildren(h('b', {}, t.n), h('span', {}, t.artist)); };
       const set = (name) => {
         const k = PICKS.findIndex((x) => x[0] === name), t = PICKS[k][1](w.mine);
+        if (k === cur) return;
+        const first = cur < 0; cur = k;
         btns.forEach((b, j) => b.setAttribute('aria-pressed', String(j === k)));
-        big.textContent = PICKS[k][2](t); big.classList.toggle('sm', String(big.textContent).length > 5);
-        song.replaceChildren(h('b', {}, t.n), h('span', {}, t.artist));
+        place();
+        if (first || matchMedia('(prefers-reduced-motion: reduce)').matches) return fill(t, k);
+        [big, song].forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
+        const out = [big, song].map((el) => el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-4px)' }], { duration: 110, easing: 'ease-in', fill: 'forwards' }));
+        out[0].finished.then(() => {
+          fill(t, k);
+          [big, song].forEach((el, i) => { el.getAnimations().forEach((a) => a.cancel()); el.animate([{ opacity: 0, transform: 'translateY(5px)' }, { opacity: 1, transform: 'none' }], { duration: 260, delay: i * 40, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }); });
+        }, () => {});
       };
       set('Oldest');
       return h('div', { class: 'cur a-up', 'data-p': p, style: `--c:${col(p)};--i:${i};--st:90ms`, onclick: (ev) => { if (!ev.target.closest('.pick')) go('who-' + p); } },
-        h('div', { class: 'chd' }, h('div', { class: 'cn' }, p), h('div', { class: 'pick', role: 'group', 'aria-label': 'Headline song' }, ...btns)), big, song,
+        h('div', { class: 'chd' }, h('div', { class: 'cn' }, p), pick), big, song,
         h('dl', {}, h('dt', {}, 'Average release year'), h('dd', {}, w.avgYear), h('dt', {}, 'Favourite genre'), h('dd', {}, w.fav), h('dt', {}, 'Average track length'), h('dd', {}, w.avg)),
         h('button', { class: 'go', type: 'button', onclick: () => go('who-' + p) }, `See all ${w.mine.length} picks →`));
     }));
