@@ -293,9 +293,9 @@
     rows.forEach(([name, ts], i) => {
       const y = i * rowH, cy = y + rowH / 2;
       if (i > 0) svg.append('line').attr('x1', 0).attr('x2', W).attr('y1', y).attr('y2', y).style('stroke', 'var(--hair)');
-      const g = svg.append('g').attr('class', 'hit').attr('tabindex', 0).attr('role', 'link').attr('aria-label', `${name}, ${plural(ts.length, 'track')}`)
+      const g = svg.append('g').attr('class', 'hit trow').attr('tabindex', 0).attr('role', 'link').attr('aria-label', `${name}, ${plural(ts.length, 'track')}`)
         .on('click', () => go('country-' + slug(name))).on('keydown', (ev) => { if (ev.key === 'Enter') go('country-' + slug(name)); });
-      g.append('rect').attr('y', y).attr('width', W).attr('height', rowH).style('fill', 'transparent');
+      g.append('rect').attr('class', 'bg').attr('x', -8).attr('y', y + 1).attr('width', W + 8).attr('height', rowH - 1);
       const fy = cy - 7.5;
       if (FLAGS[name]) {
         const id = 'fl-' + slug(name);
@@ -350,9 +350,9 @@
     if (!rows.length) { $('#c-labels').replaceChildren(h('p', { class: 'sub' }, 'No label appears twice.')); return; }
     const { svg, W, H } = svgIn($('#c-labels'), rows.length * 28, 'Record labels with more than one track');
     const rowH = H / rows.length, x0 = 116, x = d3.scaleLinear([0, d3.max(rows, (d) => d[1].length)], [x0, W - 26]);
-    const g = svg.append('g').selectAll('g').data(rows).join('g').attr('transform', (d, i) => `translate(0,${i * rowH + rowH / 2})`).attr('class', 'hit')
+    const g = svg.append('g').selectAll('g').data(rows).join('g').attr('transform', (d, i) => `translate(0,${i * rowH + rowH / 2})`).attr('class', 'hit trow')
       .attr('tabindex', 0).attr('role', 'link').on('click', (ev, d) => go('label-' + slug(d[0]))).on('keydown', (ev, d) => { if (ev.key === 'Enter') go('label-' + slug(d[0])); });
-    g.append('rect').attr('y', -rowH / 2).attr('width', W).attr('height', rowH).style('fill', 'transparent');
+    g.append('rect').attr('class', 'bg').attr('x', -8).attr('y', -rowH / 2 + 1).attr('width', W + 8).attr('height', rowH - 2);
     g.append('text').attr('dy', '0.35em').style('font-size', '11.5px').style('font-weight', 600).text((d) => d[0]);
     g.append('line').attr('x1', x0).attr('x2', (d) => x(d[1].length)).attr('class', 'a-grow').style('--i', (d, i) => i).style('stroke', 'var(--ink)').style('stroke-width', 1.8);
     g.append('circle').attr('cx', (d) => x(d[1].length)).attr('r', 7).attr('class', 'a-pop').style('--i', (d, i) => i + 8).style('--st', '40ms').style('fill', 'var(--ink)');
