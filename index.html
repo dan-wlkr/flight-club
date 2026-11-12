@@ -31,7 +31,7 @@ html:not(.loading) .loader{opacity:0;visibility:hidden}
   color-scheme:light;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent}
 html{scrollbar-gutter:stable}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--display);font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased;overflow-x:clip}
 button,select{font:inherit;color:inherit}
@@ -99,11 +99,9 @@ h2{margin:0;font-family:var(--serif);font-weight:700;font-size:22px;line-height:
 .cur dt{opacity:.85}.cur dd{margin:0;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
 .cur{container-type:inline-size}
 .cur .chd{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;padding-bottom:10px;margin-bottom:2px;border-bottom:1px solid color-mix(in srgb,var(--paper) 45%,transparent)}
-.cur .pick{position:relative;isolation:isolate;display:flex;flex-wrap:wrap;gap:4px;margin:0;justify-content:flex-end}
-.cur .pick .th{position:absolute;left:0;top:0;z-index:-1;border-radius:999px;background:var(--paper);pointer-events:none;opacity:0}
-.cur .pick .th.on{opacity:1;transition:transform .34s var(--ease),width .34s var(--ease),height .34s var(--ease)}
-.cur .pick button{all:unset;cursor:pointer;font-size:12px;font-weight:600;padding:4px 10px;border:1px solid color-mix(in srgb,var(--paper) 70%,transparent);border-radius:999px;transition:color .28s var(--ease)}
-.cur .pick button[aria-pressed=true]{color:var(--c)}
+.cur .pick{display:flex;flex-wrap:wrap;gap:4px;margin:0;justify-content:flex-end}
+.cur .pick button{all:unset;cursor:pointer;font-size:12px;font-weight:600;padding:4px 10px;border:1px solid color-mix(in srgb,var(--paper) 70%,transparent);border-radius:999px}
+.cur .pick button[aria-pressed=true]{background:var(--paper);color:var(--c)}
 .cur .pick button:focus-visible,.cur .go:focus-visible{outline:2px solid var(--paper);outline-offset:2px}
 .cur .cb.sm{font-size:44px}
 .cur .go{all:unset;cursor:pointer;margin-top:10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
