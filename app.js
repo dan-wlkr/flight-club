@@ -471,7 +471,10 @@
     if ((m = name.match(/^decade-(\d{4})$/)) && DECADES.has(+m[1])) return setView('Decade', m[1] + 's', DECADES.get(+m[1]));
     return null;
   };
-  let lastFocus = null, cur = '', stack = [], goingBack = false;
+  let lastFocus = null, cur = '', stack = [], goingBack = false, pageY = 0;
+  // On phones the drawer is laid out as a page of its own (see CSS), so swap the main page out and keep its scroll position.
+  const root = document.documentElement, phone = matchMedia('(max-width:480px)');
+  const jump = (y) => scrollTo({ top: y, behavior: 'instant' });
   const route = () => {
     const name = decodeURIComponent(location.hash.slice(1)), v = resolve(name);
     hideTip();
@@ -481,7 +484,8 @@
     if (!v) {
       stack = [];
       drawer.classList.remove('open'); scrim.classList.remove('on'); drawer.setAttribute('aria-hidden', 'true');
-      document.documentElement.style.overflow = '';
+      root.style.overflow = '';
+      if (root.classList.contains('detail')) { root.classList.remove('detail'); jump(pageY); }
       if (kbd && lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
       lastFocus = null;
       return;
@@ -491,11 +495,12 @@
     drawer.style.setProperty('--c', v.c || 'var(--ink)');
     const back = stack.length ? h('button', { type: 'button', class: 'back', onclick: () => { goingBack = true; location.hash = stack.pop(); } }, '\u2190\u00a0\u00a0Go back') : null;
     dbody.replaceChildren(...[back, ...v.body].filter(Boolean));
+    if (phone.matches) { if (!root.classList.contains('detail')) { pageY = scrollY; root.classList.add('detail'); } jump(0); }
     drawer.scrollTop = 0;
     drawer.classList.remove('open');
     void drawer.offsetWidth;
     drawer.classList.add('open'); scrim.classList.add('on'); drawer.setAttribute('aria-hidden', 'false');
-    document.documentElement.style.overflow = 'hidden';
+    root.style.overflow = phone.matches ? '' : 'hidden';
     drawer.focus({ preventScroll: true });
   };
   const close = () => go('home');

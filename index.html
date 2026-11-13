@@ -2,7 +2,7 @@
 <html lang="en-GB" class="loading">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Flight Club</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
@@ -126,13 +126,12 @@ footer{font-size:12px;opacity:.72;padding:4px 2px 0}
 .dh{position:sticky;top:0;z-index:2;background:var(--paper);display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid var(--ink)}
 .dh .kick{flex:1}
 .db{padding:20px;display:flex;flex-direction:column;gap:18px}
-/* viewport-fit=cover lets fixed layers reach the bottom edge under iOS Safari's toolbar; keep content clear of notch/status bar. */
-.wrap{padding-left:max(clamp(16px,4vw,48px),env(safe-area-inset-left));padding-right:max(clamp(16px,4vw,48px),env(safe-area-inset-right))}
-.chips{padding-left:max(var(--gut),env(safe-area-inset-left));padding-right:max(var(--gut),env(safe-area-inset-right))}
-.dh{padding-top:calc(12px + env(safe-area-inset-top));padding-right:max(20px,env(safe-area-inset-right))}
-.db{padding-right:max(20px,env(safe-area-inset-right))}
-/* Phones: drawer is full-width, so drop the scrim, and run the drawer to the bottom of the large viewport so it sits behind iOS Safari's floating toolbar instead of stopping short of it. Extra bottom padding keeps the last rows scrollable clear of the toolbar. */
-@media (max-width:480px){.scrim{display:none}.drawer{bottom:auto;height:100vh;height:100lvh}.db{padding-bottom:calc(20px + env(safe-area-inset-bottom) + 100lvh - 100svh)}}
+/* Phones: the detail view is a normal in-flow page, not a fixed layer. iOS Safari won't paint fixed layers behind its floating toolbar, which left a bar under the drawer; page content scrolls under it fine. */
+@media (max-width:480px){
+.scrim{display:none}
+.detail .wrap{height:0;overflow:hidden;padding-top:0;padding-bottom:0;visibility:hidden}
+.detail .drawer{position:relative;width:auto;min-height:100vh;min-height:100lvh;overflow:visible;transform:none;transition:border-color .45s}
+}
 .db h3{margin:0;font-weight:900;text-transform:uppercase;font-size:clamp(30px,8vw,46px);line-height:.9;letter-spacing:-.04em;overflow-wrap:anywhere;text-wrap:balance}
 .db .by{font-family:var(--serif);font-size:20px;line-height:1.2;margin:-8px 0 0}
 .db h4{margin:0 0 4px;text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:700}
