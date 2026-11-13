@@ -126,8 +126,8 @@ footer{font-size:12px;opacity:.72;padding:4px 2px 0}
 .dh{position:sticky;top:0;z-index:2;background:var(--paper);display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid var(--ink)}
 .dh .kick{flex:1}
 .db{padding:20px;display:flex;flex-direction:column;gap:18px}
-/* Drawer is full-width on phones: no visible scrim, and a tinted scrim makes iOS Safari paint a grey bar under its toolbar */
-@media (max-width:480px){.scrim{background:transparent}}
+/* Phones: drawer is full-width, so drop the scrim, and run the drawer to the bottom of the large viewport so it sits behind iOS Safari's floating toolbar instead of stopping short of it. Extra bottom padding keeps the last rows scrollable clear of the toolbar. */
+@media (max-width:480px){.scrim{display:none}.drawer{bottom:auto;height:100vh;height:100lvh}.db{padding-bottom:calc(20px + 100lvh - 100svh)}}
 .db h3{margin:0;font-weight:900;text-transform:uppercase;font-size:clamp(30px,8vw,46px);line-height:.9;letter-spacing:-.04em;overflow-wrap:anywhere;text-wrap:balance}
 .db .by{font-family:var(--serif);font-size:20px;line-height:1.2;margin:-8px 0 0}
 .db h4{margin:0 0 4px;text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:700}
