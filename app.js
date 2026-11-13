@@ -474,6 +474,7 @@
   let lastFocus = null, cur = '', stack = [], goingBack = false, pageY = 0;
   // On phones the drawer is laid out as a page of its own (see CSS), so swap the main page out and keep its scroll position.
   const root = document.documentElement, phone = matchMedia('(max-width:480px)');
+  const theme = $('meta[name=theme-color]'), paper = theme.content;
   const jump = (y) => scrollTo({ top: y, behavior: 'instant' });
   const route = () => {
     const name = decodeURIComponent(location.hash.slice(1)), v = resolve(name);
@@ -486,6 +487,7 @@
       drawer.classList.remove('open'); scrim.classList.remove('on'); drawer.setAttribute('aria-hidden', 'true');
       root.style.overflow = '';
       if (root.classList.contains('detail')) { root.classList.remove('detail'); jump(pageY); }
+      theme.content = paper;
       if (kbd && lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
       lastFocus = null;
       return;
@@ -496,6 +498,7 @@
     const back = stack.length ? h('button', { type: 'button', class: 'back', onclick: () => { goingBack = true; location.hash = stack.pop(); } }, '\u2190\u00a0\u00a0Go back') : null;
     dbody.replaceChildren(...[back, ...v.body].filter(Boolean));
     if (phone.matches) { if (!root.classList.contains('detail')) { pageY = scrollY; root.classList.add('detail'); } jump(0); }
+    theme.content = phone.matches ? getComputedStyle(drawer).getPropertyValue('--c').trim() || paper : paper;
     drawer.scrollTop = 0;
     drawer.classList.remove('open');
     void drawer.offsetWidth;
