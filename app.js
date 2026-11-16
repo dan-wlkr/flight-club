@@ -409,7 +409,7 @@
     $('#more').hidden = rows.length <= 8;
   };
 
-  const drawCharts = () => { [drawTimeline, drawWaffle, drawLengths, drawPopularity, drawClock, drawCountries, drawRanges, drawLabels, drawGenres].forEach((f) => f()); drawRanges(); applyFilter(); };
+  const drawCharts = () => { [drawTimeline, drawWaffle, drawLengths, drawPopularity, drawClock, drawCountries, drawRanges, drawLabels, drawGenres].forEach((f) => { try { f(); } catch (e) { console.error(e); } }); drawRanges(); applyFilter(); };
 
   // ---------- detail drawer ----------
   const drawer = $('#drawer'), scrim = $('#scrim'), dbody = $('#dbody');
