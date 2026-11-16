@@ -1,11 +1,11 @@
 // Rebuilds data.js from the Flight Club playlist on Spotify.
 //
 // Needs SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET and SPOTIFY_REFRESH_TOKEN in the environment;
-// LASTFM_API_KEY is optional and switches genres from Deezer to Last.fm tags.
-// Popularity and genres come from Deezer (Spotify stopped returning them). Tracks already in data.js
+// LASTFM_API_KEY is optional; without it popularity and genres come from Deezer alone.
+// Popularity and genres come from Last.fm, with Deezer as the fallback (Spotify stopped returning them). Tracks already in data.js
 // keep their label and curator name, so only new tracks cost
 // extra API calls and hand edits to existing rows survive. window.FC_COUNTRY is hand-maintained
-// and is written back untouched; scripts/genre-overrides.json holds hand-set genres per artist; new lead artists without a country are listed in the output.
+// and is written back untouched; window.FC_UPDATED is the time of this run, shown in the site footer; scripts/genre-overrides.json holds hand-set genres per artist; new lead artists without a country are listed in the output.
 import { readFile, writeFile, appendFile } from 'node:fs/promises';
 
 const PLAYLIST = process.env.SPOTIFY_PLAYLIST_ID || '1noTAUTrixdczkgwNdt3PN';
@@ -107,10 +107,11 @@ for (const { it, tr } of rows) {
 }
 tracks.sort((a, b) => a.at.localeCompare(b.at));
 
-// ---- popularity and genres from Deezer ----
-// Spotify no longer returns popularity or genres for this app. p comes from Deezer's track "rank"
-// (roughly 0 to 1,000,000), scaled to 0-100, and g from the Deezer album's genres, lower-cased.
-// Tracks Deezer can't match keep their previous values.
+// ---- popularity and genres ----
+// Spotify no longer returns popularity or genres for this app. With a Last.fm key, p is the track's
+// Last.fm listener count on a 0-100 log scale and g is the lead artist's Last.fm tags. Deezer is the
+// fallback for both (its track "rank", roughly 0 to 1,000,000, and its album genres) and supplies
+// the label for new tracks. Tracks neither service can match keep their previous values.
 const norm = (x) => String(x ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim();
 const core = (title) => norm(String(title).replace(/\s+[-\u2013]\s+.*$/, '').replace(/\s*[([].*$/, '')) || norm(title);
 const deezer = async (path) => {
@@ -143,8 +144,7 @@ const findOnDeezer = async (t) => {
   }
   return found.length ? found : null;
 };
-// Optional: with LASTFM_API_KEY set, genres come from Last.fm's listener tags for the lead artist,
-// which are far more specific than Deezer's. Deezer's genres remain the fallback.
+// Last.fm (optional, needs LASTFM_API_KEY).
 const LASTFM = (process.env.LASTFM_API_KEY ?? '').trim();
 const NOT_GENRES = /^(seen live|favou?rites?|favou?rite (artists?|bands?|songs?)|awesome|love|loved|beautiful|cool|good|great|amazing|best|all|spotify|check out|albums i own|vinyl|under \d+ listeners|(fe)?male vocalists?|(fe)?male vocals?|vocalists?|singers?|bands?|duos?|[0-9]{2,4}s?|usa?|uk|american|british|english|irish|scottish|welsh|canadian|australian|french|swedish|norwegian|danish|german|european|sweden|norway|denmark|ireland|england|scotland|wales|france|germany|canada|australia|united states|united kingdom|birmingham|producers?|new york|london|brooklyn|chicago|philadelphia|los angeles|california|texas|dublin|manchester)$/;
 // One spelling per genre, so the charts don't split "hip hop" from "hip-hop".
@@ -182,18 +182,32 @@ const lastfmGenres = (t) => {
   return lfCache.get(artist).then(async (tags) => tags.length ? tags : pickTags(await lastfm('track.gettoptags', { artist, track: t.n }), [...t.ar, t.n]));
 };
 
+// Last.fm listener count for a track. Spotify titles often carry a suffix ("- 2016 Remaster") that
+// Last.fm files separately, so also ask for the plain title and take the larger audience.
+const lastfmListeners = async (t) => {
+  const plain = String(t.n).replace(/\s+[-–]\s+.*$/, '').replace(/\s*[([].*$/, '').trim();
+  let best = null;
+  for (const track of [...new Set([t.n, plain].filter(Boolean))]) {
+    const n = +(await lastfm('track.getInfo', { artist: t.ar[0], track }))?.track?.listeners;
+    if (Number.isFinite(n) && n > (best ?? -1)) best = n;
+  }
+  return best;
+};
+// Listeners run from a handful to millions, so score on a log scale: 100 listeners = 0, 2 million = 100.
+const fromListeners = (n) => Math.max(0, Math.min(100, Math.round(((Math.log10(Math.max(n, 1)) - 2) / (Math.log10(2e6) - 2)) * 100)));
+
 const dzAlbums = new Map();
 const dzAlbum = (id) => dzAlbums.get(id) ?? dzAlbums.set(id, deezer(`/album/${id}`)).get(id);
 const unmatched = [], noGenre = [];
-let fromLastfm = 0;
+let fromLastfm = 0, popLastfm = 0, popDeezer = 0;
 try {
   const scored = [];
   for (const t of tracks) {
+    // Deezer: record label for new tracks, plus fallbacks for popularity and genres.
     const hits = await findOnDeezer(t);
-    if (!hits) { unmatched.push(t); continue; }
-    // Genres and label sit on the album. Some releases carry no genres, so try the next copies too.
     let g = [], lb = '';
-    for (const id of [...new Set(hits.map((d) => d.album?.id).filter(Boolean))].slice(0, 4)) {
+    // Genres and label sit on the album. Some releases carry no genres, so try the next copies too.
+    for (const id of [...new Set((hits ?? []).map((d) => d.album?.id).filter(Boolean))].slice(0, 4)) {
       const album = await dzAlbum(id);
       lb ||= album?.label ?? '';
       g = [...new Set((album?.genres?.data ?? []).map((x) => String(x.name).toLowerCase()))];
@@ -201,19 +215,24 @@ try {
     }
     const source = OVERRIDES[t.ar[0]] ?? (LASTFM ? await lastfmGenres(t) : []);
     if (source.length) { g = source; fromLastfm++; }
-    scored.push({ t, hit: hits[0], p: Math.max(0, Math.min(100, Math.round(hits[0].rank / 10000))), g, lb });
+    const listeners = LASTFM ? await lastfmListeners(t) : null;
+    let p, how;
+    if (listeners) { p = fromListeners(listeners); how = `Last.fm ${listeners} listeners`; popLastfm++; }
+    else if (hits) { p = Math.max(0, Math.min(100, Math.round(hits[0].rank / 10000))); how = `Deezer rank ${hits[0].rank}`; popDeezer++; }
+    else unmatched.push(t);
+    scored.push({ t, p, how, g, lb, matched: !!hits || source.length > 0 });
   }
   // Only apply once every lookup has finished, so a half-finished run can't leave mixed sources.
-  for (const { t, hit, p, g, lb } of scored) {
-    console.log(`popularity ${String(old.get(t.id)?.p ?? '-').padStart(3)} -> ${String(p).padStart(3)}  ${t.n} / ${t.ar[0]}  [Deezer: ${hit.title} / ${hit.artist?.name}, rank ${hit.rank}]  genres: ${g.join(', ') || 'none'}`);
-    t.p = p;
-    t.g = g;
-    if (!g.length) noGenre.push(t);
+  for (const { t, p, how, g, lb, matched } of scored) {
+    console.log(`popularity ${String(old.get(t.id)?.p ?? '-').padStart(3)} -> ${String(p ?? 'kept').padStart(4)}  ${t.n} / ${t.ar[0]}  [${how ?? 'no source'}]  genres: ${g.join(', ') || 'none'}`);
+    if (p != null) t.p = p;
+    if (matched) t.g = g;
+    if (!t.g.length) noGenre.push(t);
     // Spotify no longer returns album labels either, so new tracks take theirs from Deezer.
     if (!t.lb) t.lb = lb;
   }
-  notes.push(`Popularity from Deezer for ${scored.length} of ${tracks.length} tracks. Genres: ${LASTFM ? `${fromLastfm} from Last.fm, the rest from Deezer` : 'all from Deezer (no LASTFM_API_KEY set)'}.`);
-  if (unmatched.length) notes.push(`Not found on Deezer (popularity and genres left as they were): ${unmatched.map((t) => `${t.n} by ${t.ar[0]}`).join('; ')}`);
+  notes.push(`Popularity: ${popLastfm} from Last.fm listeners, ${popDeezer} from Deezer. Genres: ${LASTFM ? `${fromLastfm} from Last.fm or overrides, the rest from Deezer` : 'from Deezer (no LASTFM_API_KEY set)'}.`);
+  if (unmatched.length) notes.push(`No popularity source found (left as it was): ${unmatched.map((t) => `${t.n} by ${t.ar[0]}`).join('; ')}`);
   if (noGenre.length) notes.push(`No genre found for ${noGenre.length} tracks: ${noGenre.map((t) => `${t.n} by ${t.ar[0]}`).join('; ')}`);
 } catch (e) {
   console.warn(`::warning::Popularity and genre lookup failed (${e.message}); popularity and genres left unchanged this run.`);
@@ -237,4 +256,4 @@ out.push(...notes);
 console.log(out.join('\n'));
 if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, out.join('\n') + '\n');
 
-await writeFile(FILE, `window.FC_TRACKS=${JSON.stringify(tracks)};\n\nwindow.FC_COUNTRY=${JSON.stringify(countries)};\n`);
+await writeFile(FILE, `window.FC_TRACKS=${JSON.stringify(tracks)};\n\nwindow.FC_COUNTRY=${JSON.stringify(countries)};\n\nwindow.FC_UPDATED=${JSON.stringify(new Date().toISOString().slice(0, 19) + 'Z')};\n`);

@@ -23,6 +23,7 @@
   const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
   const ukHour = new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone: 'Europe/London' });
   const ukFull = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Europe/London' });
+  if (window.FC_UPDATED) $('#updated').textContent = 'Last updated ' + new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'Europe/London' }).format(new Date(window.FC_UPDATED)).replace(',', ' at');
   const ukDay = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' });
 
   const T = window.FC_TRACKS.map((t) => {
