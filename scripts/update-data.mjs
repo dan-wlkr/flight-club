@@ -145,7 +145,7 @@ const findOnDeezer = async (t) => {
 };
 // Optional: with LASTFM_API_KEY set, genres come from Last.fm's listener tags for the lead artist,
 // which are far more specific than Deezer's. Deezer's genres remain the fallback.
-const LASTFM = process.env.LASTFM_API_KEY;
+const LASTFM = (process.env.LASTFM_API_KEY ?? '').trim();
 const NOT_GENRES = /^(seen live|favou?rites?|favou?rite (artists?|bands?|songs?)|awesome|love|loved|beautiful|cool|good|great|amazing|best|all|spotify|check out|albums i own|vinyl|under \d+ listeners|(fe)?male vocalists?|(fe)?male vocals?|vocalists?|singers?|bands?|duos?|[0-9]{2,4}s?|usa?|uk|american|british|english|irish|scottish|welsh|canadian|australian|french|swedish|norwegian|danish|german|european|new york|london|brooklyn|chicago|philadelphia|los angeles|california|texas|dublin|manchester)$/;
 const lfCache = new Map();
 const lastfm = async (method, params) => {
@@ -212,8 +212,8 @@ try {
   if (unmatched.length) notes.push(`Not found on Deezer (popularity and genres left as they were): ${unmatched.map((t) => `${t.n} by ${t.ar[0]}`).join('; ')}`);
   if (noGenre.length) notes.push(`No genre found for ${noGenre.length} tracks: ${noGenre.map((t) => `${t.n} by ${t.ar[0]}`).join('; ')}`);
 } catch (e) {
-  console.warn(`::warning::Deezer lookup failed (${e.message}); popularity and genres left unchanged this run.`);
-  notes.push('Deezer lookup failed; popularity and genres left unchanged this run.');
+  console.warn(`::warning::Popularity and genre lookup failed (${e.message}); popularity and genres left unchanged this run.`);
+  notes.push(`Popularity and genre lookup failed (${e.message}); both left unchanged this run.`);
 }
 for (const t of tracks) delete t.isrc;
 
