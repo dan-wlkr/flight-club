@@ -137,14 +137,13 @@ const findOnDeezer = async (t) => {
   const title = core(t.n), lead = norm(t.ar[0]);
   for (const q of [`artist:"${t.ar[0]}" track:"${t.n.replace(/"/g, '')}"`, `artist:"${t.ar[0]}" track:"${title}"`, `${t.ar[0]} ${title}`]) {
     const res = await deezer(`/search/track?limit=15&q=${encodeURIComponent(q)}`);
-    const hits = (res?.data ?? []).filter((d) => {
-      const dt = core(d.title), da = norm(d.artist?.name);
-      return (dt === title || dt.startsWith(title) || title.startsWith(dt)) && (da === lead || da.includes(lead) || lead.includes(da));
-    });
-    if (!hits.length) continue;
-    // Prefer the same recording (similar length), then the most-played version of it.
-    const close = hits.filter((d) => Math.abs(d.duration * 1000 - t.ms) <= 12000);
-    return (close.length ? close : hits).sort((a, b) => b.rank - a.rank)[0];
+    const byArtist = (res?.data ?? []).filter((d) => { const da = norm(d.artist?.name); return da === lead || da.includes(lead) || lead.includes(da); });
+    // Deezer lists the same song on many releases, some with a near-zero rank, so take the
+    // most-played copy with the same title; only fall back to a looser title match if there is none.
+    const exact = byArtist.filter((d) => core(d.title) === title);
+    const loose = byArtist.filter((d) => { const dt = core(d.title); return dt.startsWith(title) || title.startsWith(dt); });
+    const hits = exact.length ? exact : loose.filter((d) => Math.abs(d.duration * 1000 - t.ms) <= 12000);
+    if (hits.length) return hits.sort((a, b) => b.rank - a.rank)[0];
   }
   return null;
 };
@@ -160,6 +159,8 @@ try {
   for (const [t, p, hit] of scored) {
     console.log(`popularity ${String(old.get(t.id)?.p ?? '-').padStart(3)} -> ${String(p).padStart(3)}  ${t.n} / ${t.ar[0]}  [Deezer: ${hit.title} / ${hit.artist?.name}, rank ${hit.rank}]`);
     t.p = p;
+    // Spotify no longer returns album labels either, so new tracks take theirs from Deezer.
+    if (!t.lb && hit.album?.id) t.lb = (await deezer(`/album/${hit.album.id}`))?.label ?? '';
   }
   notes.push(`Popularity from Deezer for ${scored.length} of ${tracks.length} tracks.`);
   if (unmatched.length) notes.push(`Not found on Deezer (popularity left as it was): ${unmatched.map((t) => `${t.n} by ${t.ar[0]}`).join('; ')}`);
@@ -180,14 +181,7 @@ const out = [`Playlist has ${tracks.length} tracks: ${added.length} added, ${rem
 added.forEach((t) => out.push(`- Added: ${line(t)}`));
 removed.forEach((t) => out.push(`- Removed: ${line(t)}`));
 if (noCountry.length) out.push(`Artists with no country in window.FC_COUNTRY (shown as "Unknown"): ${noCountry.join(', ')}`);
-if (blank.length) out.push(`New tracks missing a label or genres from Spotify: ${blank.map((t) => t.n).join(', ')}`);
-// Diagnostic: does Spotify still send album labels and artist genres? (Only fetched for new tracks otherwise.)
-{
-  const tr = rows[0].tr;
-  const album = tr.album?.id ? await cached(albums, tr.album.id, `/albums/${tr.album.id}`) : null;
-  const artist = tr.artists?.[0]?.id ? await cached(artists, tr.artists[0].id, `/artists/${tr.artists[0].id}`) : null;
-  out.push(`Spotify check: album label ${album && 'label' in album ? 'present' : 'missing'}, artist genres ${artist && 'genres' in artist ? 'present' : 'missing'}.`);
-}
+if (blank.length) out.push(`New tracks with no label or no genres (Spotify no longer supplies them): ${blank.map((t) => t.n).join(', ')}`);
 out.push(...notes);
 console.log(out.join('\n'));
 if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, out.join('\n') + '\n');
