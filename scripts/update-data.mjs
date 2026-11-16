@@ -1,7 +1,8 @@
 // Rebuilds data.js from the Flight Club playlist on Spotify.
 //
 // Needs SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET and SPOTIFY_REFRESH_TOKEN in the environment.
-// Tracks already in data.js keep their genres, label and curator name, so only new tracks cost
+// Popularity comes from Deezer (Spotify stopped returning it). Tracks already in data.js keep their
+// genres, label and curator name, so only new tracks cost
 // extra API calls and hand edits to existing rows survive. window.FC_COUNTRY is hand-maintained
 // and is written back untouched; new lead artists without a country are listed in the output.
 import { readFile, writeFile, appendFile } from 'node:fs/promises';
@@ -109,9 +110,64 @@ for (const { it, tr } of rows) {
     g,
     lb,
     p: tr.popularity ?? was?.p ?? 0,
+    isrc: tr.external_ids?.isrc,
   });
 }
 tracks.sort((a, b) => a.at.localeCompare(b.at));
+
+// ---- popularity from Deezer ----
+// Spotify no longer returns popularity for this app, so p comes from Deezer's track "rank"
+// (roughly 0 to 1,000,000), scaled to 0-100. Tracks Deezer can't match keep their previous value.
+const norm = (x) => String(x ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim();
+const core = (title) => norm(String(title).replace(/\s+[-\u2013]\s+.*$/, '').replace(/\s*[([].*$/, '')) || norm(title);
+const deezer = async (path) => {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await sleep(150);
+    const res = await fetch('https://api.deezer.com' + path);
+    const body = res.ok ? await res.json() : null;
+    if (body && !body.error) return body;
+    if (body?.error?.code === 800) return null; // no data
+    if (body?.error?.code !== 4 && res.ok) return null; // 4 = rate limit, worth a retry
+    await sleep(2000 * (attempt + 1));
+  }
+  throw new Error('Deezer is not responding');
+};
+const findOnDeezer = async (t) => {
+  if (t.isrc) { const hit = await deezer(`/track/isrc:${encodeURIComponent(t.isrc)}`); if (hit?.rank != null) return hit; }
+  const title = core(t.n), lead = norm(t.ar[0]);
+  for (const q of [`artist:"${t.ar[0]}" track:"${t.n.replace(/"/g, '')}"`, `artist:"${t.ar[0]}" track:"${title}"`, `${t.ar[0]} ${title}`]) {
+    const res = await deezer(`/search/track?limit=15&q=${encodeURIComponent(q)}`);
+    const hits = (res?.data ?? []).filter((d) => {
+      const dt = core(d.title), da = norm(d.artist?.name);
+      return (dt === title || dt.startsWith(title) || title.startsWith(dt)) && (da === lead || da.includes(lead) || lead.includes(da));
+    });
+    if (!hits.length) continue;
+    // Prefer the same recording (similar length), then the most-played version of it.
+    const close = hits.filter((d) => Math.abs(d.duration * 1000 - t.ms) <= 12000);
+    return (close.length ? close : hits).sort((a, b) => b.rank - a.rank)[0];
+  }
+  return null;
+};
+const unmatched = [];
+try {
+  const scored = [];
+  for (const t of tracks) {
+    const hit = await findOnDeezer(t);
+    if (hit) scored.push([t, Math.max(0, Math.min(100, Math.round(hit.rank / 10000))), hit]);
+    else unmatched.push(t);
+  }
+  // Only apply once every lookup has finished, so a half-finished run can't leave mixed sources.
+  for (const [t, p, hit] of scored) {
+    console.log(`popularity ${String(old.get(t.id)?.p ?? '-').padStart(3)} -> ${String(p).padStart(3)}  ${t.n} / ${t.ar[0]}  [Deezer: ${hit.title} / ${hit.artist?.name}, rank ${hit.rank}]`);
+    t.p = p;
+  }
+  notes.push(`Popularity from Deezer for ${scored.length} of ${tracks.length} tracks.`);
+  if (unmatched.length) notes.push(`Not found on Deezer (popularity left as it was): ${unmatched.map((t) => `${t.n} by ${t.ar[0]}`).join('; ')}`);
+} catch (e) {
+  console.warn(`::warning::Deezer lookup failed (${e.message}); popularity left unchanged this run.`);
+  notes.push('Deezer lookup failed; popularity left unchanged this run.');
+}
+for (const t of tracks) delete t.isrc;
 
 // ---- report and write ----
 const now = new Set(tracks.map((t) => t.id));
@@ -125,12 +181,12 @@ added.forEach((t) => out.push(`- Added: ${line(t)}`));
 removed.forEach((t) => out.push(`- Removed: ${line(t)}`));
 if (noCountry.length) out.push(`Artists with no country in window.FC_COUNTRY (shown as "Unknown"): ${noCountry.join(', ')}`);
 if (blank.length) out.push(`New tracks missing a label or genres from Spotify: ${blank.map((t) => t.n).join(', ')}`);
-// Diagnostic: does Spotify still send popularity, in the playlist or on the single-track endpoint?
-const withPop = rows.filter(({ tr }) => typeof tr.popularity === 'number').length;
-out.push(`Popularity present on ${withPop} of ${rows.length} playlist tracks.`);
-if (withPop < rows.length) {
-  const probe = await get(`/tracks/${rows.find(({ tr }) => typeof tr.popularity !== 'number').tr.id}`, { optional: true });
-  out.push(`Single-track lookup ${probe ? (typeof probe.popularity === 'number' ? `has popularity (${probe.popularity})` : 'has no popularity field') : 'failed'}.`);
+// Diagnostic: does Spotify still send album labels and artist genres? (Only fetched for new tracks otherwise.)
+{
+  const tr = rows[0].tr;
+  const album = tr.album?.id ? await cached(albums, tr.album.id, `/albums/${tr.album.id}`) : null;
+  const artist = tr.artists?.[0]?.id ? await cached(artists, tr.artists[0].id, `/artists/${tr.artists[0].id}`) : null;
+  out.push(`Spotify check: album label ${album && 'label' in album ? 'present' : 'missing'}, artist genres ${artist && 'genres' in artist ? 'present' : 'missing'}.`);
 }
 out.push(...notes);
 console.log(out.join('\n'));
