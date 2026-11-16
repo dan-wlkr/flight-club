@@ -1,6 +1,7 @@
 // Rebuilds data.js from the Flight Club playlist on Spotify.
 //
-// Needs SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET and SPOTIFY_REFRESH_TOKEN in the environment.
+// Needs SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET and SPOTIFY_REFRESH_TOKEN in the environment;
+// LASTFM_API_KEY is optional and switches genres from Deezer to Last.fm tags.
 // Popularity and genres come from Deezer (Spotify stopped returning them). Tracks already in data.js
 // keep their label and curator name, so only new tracks cost
 // extra API calls and hand edits to existing rows survive. window.FC_COUNTRY is hand-maintained
@@ -142,9 +143,45 @@ const findOnDeezer = async (t) => {
   }
   return found.length ? found : null;
 };
+// Optional: with LASTFM_API_KEY set, genres come from Last.fm's listener tags for the lead artist,
+// which are far more specific than Deezer's. Deezer's genres remain the fallback.
+const LASTFM = process.env.LASTFM_API_KEY;
+const NOT_GENRES = /^(seen live|favou?rites?|favou?rite (artists?|bands?|songs?)|awesome|love|loved|beautiful|cool|good|great|amazing|best|all|spotify|check out|albums i own|vinyl|under \d+ listeners|(fe)?male vocalists?|(fe)?male vocals?|vocalists?|singers?|bands?|duos?|[0-9]{2,4}s?|usa?|uk|american|british|english|irish|scottish|welsh|canadian|australian|french|swedish|norwegian|danish|german|european|new york|london|brooklyn|chicago|philadelphia|los angeles|california|texas|dublin|manchester)$/;
+const lfCache = new Map();
+const lastfm = async (method, params) => {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await sleep(250);
+    const res = await fetch('https://ws.audioscrobbler.com/2.0/?' + new URLSearchParams({ method, ...params, autocorrect: '1', api_key: LASTFM, format: 'json' }));
+    const body = await res.json().catch(() => null);
+    if (body && !body.error) return body;
+    if (body?.error === 6) return null; // not found
+    if (body && ![8, 11, 16, 29].includes(body.error)) throw new Error(`Last.fm error ${body.error}: ${body.message}`);
+    await sleep(2000 * (attempt + 1));
+  }
+  throw new Error('Last.fm is not responding');
+};
+const pickTags = (body, names) => {
+  const seen = new Set(names.map(norm)), out = [];
+  for (const tag of body?.toptags?.tag ?? []) {
+    const name = String(tag.name).toLowerCase().trim(), key = norm(name);
+    if (!key || seen.has(key) || NOT_GENRES.test(name) || name.length > 30) continue;
+    if (out.length && +tag.count < 25) break; // tags arrive strongest first, scored 0-100
+    seen.add(key);
+    out.push(name);
+    if (out.length === 3) break;
+  }
+  return out;
+};
+const lastfmGenres = (t) => {
+  const artist = t.ar[0];
+  if (!lfCache.has(artist)) lfCache.set(artist, lastfm('artist.gettoptags', { artist }).then((b) => pickTags(b, t.ar)));
+  return lfCache.get(artist).then(async (tags) => tags.length ? tags : pickTags(await lastfm('track.gettoptags', { artist, track: t.n }), [...t.ar, t.n]));
+};
+
 const dzAlbums = new Map();
 const dzAlbum = (id) => dzAlbums.get(id) ?? dzAlbums.set(id, deezer(`/album/${id}`)).get(id);
 const unmatched = [], noGenre = [];
+let fromLastfm = 0;
 try {
   const scored = [];
   for (const t of tracks) {
@@ -158,6 +195,8 @@ try {
       g = [...new Set((album?.genres?.data ?? []).map((x) => String(x.name).toLowerCase()))];
       if (g.length) break;
     }
+    const source = LASTFM ? await lastfmGenres(t) : [];
+    if (source.length) { g = source; fromLastfm++; }
     scored.push({ t, hit: hits[0], p: Math.max(0, Math.min(100, Math.round(hits[0].rank / 10000))), g, lb });
   }
   // Only apply once every lookup has finished, so a half-finished run can't leave mixed sources.
@@ -169,9 +208,9 @@ try {
     // Spotify no longer returns album labels either, so new tracks take theirs from Deezer.
     if (!t.lb) t.lb = lb;
   }
-  notes.push(`Popularity and genres from Deezer for ${scored.length} of ${tracks.length} tracks.`);
+  notes.push(`Popularity from Deezer for ${scored.length} of ${tracks.length} tracks. Genres: ${LASTFM ? `${fromLastfm} from Last.fm, the rest from Deezer` : 'all from Deezer (no LASTFM_API_KEY set)'}.`);
   if (unmatched.length) notes.push(`Not found on Deezer (popularity and genres left as they were): ${unmatched.map((t) => `${t.n} by ${t.ar[0]}`).join('; ')}`);
-  if (noGenre.length) notes.push(`Deezer has no genre for ${noGenre.length} tracks: ${noGenre.map((t) => `${t.n} by ${t.ar[0]}`).join('; ')}`);
+  if (noGenre.length) notes.push(`No genre found for ${noGenre.length} tracks: ${noGenre.map((t) => `${t.n} by ${t.ar[0]}`).join('; ')}`);
 } catch (e) {
   console.warn(`::warning::Deezer lookup failed (${e.message}); popularity and genres left unchanged this run.`);
   notes.push('Deezer lookup failed; popularity and genres left unchanged this run.');
