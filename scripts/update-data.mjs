@@ -125,6 +125,13 @@ added.forEach((t) => out.push(`- Added: ${line(t)}`));
 removed.forEach((t) => out.push(`- Removed: ${line(t)}`));
 if (noCountry.length) out.push(`Artists with no country in window.FC_COUNTRY (shown as "Unknown"): ${noCountry.join(', ')}`);
 if (blank.length) out.push(`New tracks missing a label or genres from Spotify: ${blank.map((t) => t.n).join(', ')}`);
+// Diagnostic: does Spotify still send popularity, in the playlist or on the single-track endpoint?
+const withPop = rows.filter(({ tr }) => typeof tr.popularity === 'number').length;
+out.push(`Popularity present on ${withPop} of ${rows.length} playlist tracks.`);
+if (withPop < rows.length) {
+  const probe = await get(`/tracks/${rows.find(({ tr }) => typeof tr.popularity !== 'number').tr.id}`, { optional: true });
+  out.push(`Single-track lookup ${probe ? (typeof probe.popularity === 'number' ? `has popularity (${probe.popularity})` : 'has no popularity field') : 'failed'}.`);
+}
 out.push(...notes);
 console.log(out.join('\n'));
 if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, out.join('\n') + '\n');
