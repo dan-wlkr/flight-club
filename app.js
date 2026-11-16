@@ -358,7 +358,6 @@
 
   const drawLabels = () => {
     const rows = [...LABELS].filter(([, v]) => v.length > 1).sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
-    $('#single').textContent = [...LABELS.values()].filter((v) => v.length === 1).length;
     if (!rows.length) { $('#c-labels').replaceChildren(h('p', { class: 'sub' }, 'No label appears twice.')); return; }
     const { svg, W, H } = svgIn($('#c-labels'), rows.length * 28, 'Record labels with more than one track');
     const rowH = H / rows.length, x0 = 116, x = d3.scaleLinear([0, d3.max(rows, (d) => d[1].length)], [x0, W - 26]);
