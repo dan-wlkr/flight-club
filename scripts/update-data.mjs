@@ -5,7 +5,7 @@
 // Popularity and genres come from Deezer (Spotify stopped returning them). Tracks already in data.js
 // keep their label and curator name, so only new tracks cost
 // extra API calls and hand edits to existing rows survive. window.FC_COUNTRY is hand-maintained
-// and is written back untouched; new lead artists without a country are listed in the output.
+// and is written back untouched; scripts/genre-overrides.json holds hand-set genres per artist; new lead artists without a country are listed in the output.
 import { readFile, writeFile, appendFile } from 'node:fs/promises';
 
 const PLAYLIST = process.env.SPOTIFY_PLAYLIST_ID || '1noTAUTrixdczkgwNdt3PN';
@@ -146,7 +146,11 @@ const findOnDeezer = async (t) => {
 // Optional: with LASTFM_API_KEY set, genres come from Last.fm's listener tags for the lead artist,
 // which are far more specific than Deezer's. Deezer's genres remain the fallback.
 const LASTFM = (process.env.LASTFM_API_KEY ?? '').trim();
-const NOT_GENRES = /^(seen live|favou?rites?|favou?rite (artists?|bands?|songs?)|awesome|love|loved|beautiful|cool|good|great|amazing|best|all|spotify|check out|albums i own|vinyl|under \d+ listeners|(fe)?male vocalists?|(fe)?male vocals?|vocalists?|singers?|bands?|duos?|[0-9]{2,4}s?|usa?|uk|american|british|english|irish|scottish|welsh|canadian|australian|french|swedish|norwegian|danish|german|european|new york|london|brooklyn|chicago|philadelphia|los angeles|california|texas|dublin|manchester)$/;
+const NOT_GENRES = /^(seen live|favou?rites?|favou?rite (artists?|bands?|songs?)|awesome|love|loved|beautiful|cool|good|great|amazing|best|all|spotify|check out|albums i own|vinyl|under \d+ listeners|(fe)?male vocalists?|(fe)?male vocals?|vocalists?|singers?|bands?|duos?|[0-9]{2,4}s?|usa?|uk|american|british|english|irish|scottish|welsh|canadian|australian|french|swedish|norwegian|danish|german|european|sweden|norway|denmark|ireland|england|scotland|wales|france|germany|canada|australia|united states|united kingdom|birmingham|producers?|new york|london|brooklyn|chicago|philadelphia|los angeles|california|texas|dublin|manchester)$/;
+// One spelling per genre, so the charts don't split "hip hop" from "hip-hop".
+const ALIAS = { 'hip hop': 'hip-hop', hiphop: 'hip-hop', lofi: 'lo-fi', 'lo fi': 'lo-fi', 'r&b': 'rnb', 'r and b': 'rnb', 'alt country': 'alt-country', 'synth pop': 'synthpop', 'post punk': 'post-punk', 'post rock': 'post-rock', 'trip hop': 'trip-hop', 'singer songwriter': 'singer-songwriter' };
+// Hand corrections by lead artist, for when Last.fm mixes up two acts with the same name.
+const OVERRIDES = JSON.parse(await readFile(new URL('./genre-overrides.json', import.meta.url), 'utf8'));
 const lfCache = new Map();
 const lastfm = async (method, params) => {
   for (let attempt = 0; attempt < 4; attempt++) {
@@ -163,7 +167,7 @@ const lastfm = async (method, params) => {
 const pickTags = (body, names) => {
   const seen = new Set(names.map(norm)), out = [];
   for (const tag of body?.toptags?.tag ?? []) {
-    const name = String(tag.name).toLowerCase().trim(), key = norm(name);
+    const raw = String(tag.name).toLowerCase().trim(), name = ALIAS[raw] ?? raw, key = norm(name);
     if (!key || seen.has(key) || NOT_GENRES.test(name) || name.length > 30) continue;
     if (out.length && +tag.count < 25) break; // tags arrive strongest first, scored 0-100
     seen.add(key);
@@ -195,7 +199,7 @@ try {
       g = [...new Set((album?.genres?.data ?? []).map((x) => String(x.name).toLowerCase()))];
       if (g.length) break;
     }
-    const source = LASTFM ? await lastfmGenres(t) : [];
+    const source = OVERRIDES[t.ar[0]] ?? (LASTFM ? await lastfmGenres(t) : []);
     if (source.length) { g = source; fromLastfm++; }
     scored.push({ t, hit: hits[0], p: Math.max(0, Math.min(100, Math.round(hits[0].rank / 10000))), g, lb });
   }
