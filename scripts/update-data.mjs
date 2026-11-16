@@ -127,6 +127,7 @@ const deezer = async (path) => {
 const findOnDeezer = async (t) => {
   if (t.isrc) { const hit = await deezer(`/track/isrc:${encodeURIComponent(t.isrc)}`); if (hit?.rank != null) return [hit]; }
   const title = core(t.n), lead = norm(t.ar[0]);
+  let found = [];
   for (const q of [`artist:"${t.ar[0]}" track:"${t.n.replace(/"/g, '')}"`, `artist:"${t.ar[0]}" track:"${title}"`, `${t.ar[0]} ${title}`]) {
     const res = await deezer(`/search/track?limit=15&q=${encodeURIComponent(q)}`);
     const byArtist = (res?.data ?? []).filter((d) => { const da = norm(d.artist?.name); return da === lead || da.includes(lead) || lead.includes(da); });
@@ -135,9 +136,11 @@ const findOnDeezer = async (t) => {
     const exact = byArtist.filter((d) => core(d.title) === title);
     const loose = byArtist.filter((d) => { const dt = core(d.title); return dt.startsWith(title) || title.startsWith(dt); });
     const hits = exact.length ? exact : loose.filter((d) => Math.abs(d.duration * 1000 - t.ms) <= 12000);
-    if (hits.length) return hits.sort((a, b) => b.rank - a.rank);
+    found = [...found, ...hits.filter((d) => !found.some((f) => f.id === d.id))].sort((a, b) => b.rank - a.rank);
+    // A very low rank usually means only an obscure copy turned up; the next, looser search may find the main one.
+    if (found.length && found[0].rank >= 30000) break;
   }
-  return null;
+  return found.length ? found : null;
 };
 const dzAlbums = new Map();
 const dzAlbum = (id) => dzAlbums.get(id) ?? dzAlbums.set(id, deezer(`/album/${id}`)).get(id);
