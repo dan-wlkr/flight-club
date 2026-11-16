@@ -384,7 +384,8 @@
     const fit = (d, words) => Math.min(14.5, (d.x1 - d.x0 - 11) / (d3.max(words, (w) => w.length) * 0.56));
     g.each(function (d) {
       const name = d.data.genre, hh = d.y1 - d.y0, avail = hh - (hh > 50 && d.x1 - d.x0 > 29 ? 26 : 0);
-      const opts = [[name], name.replace(/hip hop/, 'hip\u00a0hop').split(' '), name.split(' ')];
+      // Later options break at hyphens too ("singer-" / "songwriter") for narrow tiles.
+      const opts = [[name], name.replace(/hip hop/, 'hip\u00a0hop').split(' '), name.split(' '), name.split(/(?<=-)| /)];
       for (const lines of opts) {
         let f = fit(d, lines);
         while (f >= 8 && lines.length * f * 1.1 + 7 > avail) f -= 0.5;
@@ -393,6 +394,9 @@
         lines.forEach((w, k) => t.append('tspan').attr('x', 6).attr('y', 5 + f * (1 + k * 1.1)).text(w));
         return;
       }
+      // Still no room across a tall, narrow tile: run the name down it instead.
+      const fv = Math.min(14.5, d.x1 - d.x0 - 12, (avail - 10) / (name.length * 0.56));
+      if (fv >= 8) d3.select(this).append('text').style('font-size', fv + 'px').style('font-weight', 700).attr('transform', `translate(${6 + fv * 0.25},6) rotate(90)`).text(name);
     });
     g.filter((d) => d.y1 - d.y0 > 50 && d.x1 - d.x0 > 29).append('text').attr('x', 6).attr('y', (d) => d.y1 - d.y0 - 7).style('font-size', '22px').style('font-weight', 800).style('letter-spacing', '-0.04em').text((d) => d.data.n);
   };
