@@ -1,0 +1,39 @@
+name: Update playlist data
+
+on:
+  schedule:
+    # Thursdays 04:07 UTC: 4am UK time in winter, 5am in summer (cron has no time zones).
+    - cron: '7 4 * * 4'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Rebuild data.js from Spotify
+        run: node scripts/update-data.mjs
+        env:
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+          SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- data.js; then
+            echo "No changes to data.js"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update playlist data from Spotify" -- data.js
+          git push
