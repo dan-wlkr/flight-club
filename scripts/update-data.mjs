@@ -1,8 +1,8 @@
 // Rebuilds data.js from the Flight Club playlist on Spotify.
 //
 // Needs SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET and SPOTIFY_REFRESH_TOKEN in the environment.
-// Popularity comes from Deezer (Spotify stopped returning it). Tracks already in data.js keep their
-// genres, label and curator name, so only new tracks cost
+// Popularity and genres come from Deezer (Spotify stopped returning them). Tracks already in data.js
+// keep their label and curator name, so only new tracks cost
 // extra API calls and hand edits to existing rows survive. window.FC_COUNTRY is hand-maintained
 // and is written back untouched; new lead artists without a country are listed in the output.
 import { readFile, writeFile, appendFile } from 'node:fs/promises';
@@ -82,22 +82,13 @@ const nameFor = async (uid) => {
   return curator.get(uid);
 };
 
-const notes = [], albums = new Map(), artists = new Map();
-const cached = (map, key, path) => map.get(key) ?? map.set(key, get(path, { optional: true })).get(key);
+const notes = [];
 
 const tracks = [];
 for (const { it, tr } of rows) {
   const was = old.get(tr.id);
-  let g = was?.g, lb = was?.lb;
-  if (!was) {
-    const album = tr.album?.id ? await cached(albums, tr.album.id, `/albums/${tr.album.id}`) : null;
-    lb = album?.label ?? tr.album?.label ?? '';
-    g = [];
-    for (const a of tr.artists ?? []) {
-      const full = a.id ? await cached(artists, a.id, `/artists/${a.id}`) : null;
-      for (const x of full?.genres ?? []) if (!g.includes(x)) g.push(x);
-    }
-  }
+  // Spotify no longer returns labels or genres; Deezer fills these in below.
+  const g = was?.g ?? [], lb = was?.lb ?? '';
   tracks.push({
     id: tr.id,
     n: tr.name,
@@ -115,9 +106,10 @@ for (const { it, tr } of rows) {
 }
 tracks.sort((a, b) => a.at.localeCompare(b.at));
 
-// ---- popularity from Deezer ----
-// Spotify no longer returns popularity for this app, so p comes from Deezer's track "rank"
-// (roughly 0 to 1,000,000), scaled to 0-100. Tracks Deezer can't match keep their previous value.
+// ---- popularity and genres from Deezer ----
+// Spotify no longer returns popularity or genres for this app. p comes from Deezer's track "rank"
+// (roughly 0 to 1,000,000), scaled to 0-100, and g from the Deezer album's genres, lower-cased.
+// Tracks Deezer can't match keep their previous values.
 const norm = (x) => String(x ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim();
 const core = (title) => norm(String(title).replace(/\s+[-\u2013]\s+.*$/, '').replace(/\s*[([].*$/, '')) || norm(title);
 const deezer = async (path) => {
@@ -133,7 +125,7 @@ const deezer = async (path) => {
   throw new Error('Deezer is not responding');
 };
 const findOnDeezer = async (t) => {
-  if (t.isrc) { const hit = await deezer(`/track/isrc:${encodeURIComponent(t.isrc)}`); if (hit?.rank != null) return hit; }
+  if (t.isrc) { const hit = await deezer(`/track/isrc:${encodeURIComponent(t.isrc)}`); if (hit?.rank != null) return [hit]; }
   const title = core(t.n), lead = norm(t.ar[0]);
   for (const q of [`artist:"${t.ar[0]}" track:"${t.n.replace(/"/g, '')}"`, `artist:"${t.ar[0]}" track:"${title}"`, `${t.ar[0]} ${title}`]) {
     const res = await deezer(`/search/track?limit=15&q=${encodeURIComponent(q)}`);
@@ -143,30 +135,43 @@ const findOnDeezer = async (t) => {
     const exact = byArtist.filter((d) => core(d.title) === title);
     const loose = byArtist.filter((d) => { const dt = core(d.title); return dt.startsWith(title) || title.startsWith(dt); });
     const hits = exact.length ? exact : loose.filter((d) => Math.abs(d.duration * 1000 - t.ms) <= 12000);
-    if (hits.length) return hits.sort((a, b) => b.rank - a.rank)[0];
+    if (hits.length) return hits.sort((a, b) => b.rank - a.rank);
   }
   return null;
 };
-const unmatched = [];
+const dzAlbums = new Map();
+const dzAlbum = (id) => dzAlbums.get(id) ?? dzAlbums.set(id, deezer(`/album/${id}`)).get(id);
+const unmatched = [], noGenre = [];
 try {
   const scored = [];
   for (const t of tracks) {
-    const hit = await findOnDeezer(t);
-    if (hit) scored.push([t, Math.max(0, Math.min(100, Math.round(hit.rank / 10000))), hit]);
-    else unmatched.push(t);
+    const hits = await findOnDeezer(t);
+    if (!hits) { unmatched.push(t); continue; }
+    // Genres and label sit on the album. Some releases carry no genres, so try the next copies too.
+    let g = [], lb = '';
+    for (const id of [...new Set(hits.map((d) => d.album?.id).filter(Boolean))].slice(0, 4)) {
+      const album = await dzAlbum(id);
+      lb ||= album?.label ?? '';
+      g = [...new Set((album?.genres?.data ?? []).map((x) => String(x.name).toLowerCase()))];
+      if (g.length) break;
+    }
+    scored.push({ t, hit: hits[0], p: Math.max(0, Math.min(100, Math.round(hits[0].rank / 10000))), g, lb });
   }
   // Only apply once every lookup has finished, so a half-finished run can't leave mixed sources.
-  for (const [t, p, hit] of scored) {
-    console.log(`popularity ${String(old.get(t.id)?.p ?? '-').padStart(3)} -> ${String(p).padStart(3)}  ${t.n} / ${t.ar[0]}  [Deezer: ${hit.title} / ${hit.artist?.name}, rank ${hit.rank}]`);
+  for (const { t, hit, p, g, lb } of scored) {
+    console.log(`popularity ${String(old.get(t.id)?.p ?? '-').padStart(3)} -> ${String(p).padStart(3)}  ${t.n} / ${t.ar[0]}  [Deezer: ${hit.title} / ${hit.artist?.name}, rank ${hit.rank}]  genres: ${g.join(', ') || 'none'}`);
     t.p = p;
+    t.g = g;
+    if (!g.length) noGenre.push(t);
     // Spotify no longer returns album labels either, so new tracks take theirs from Deezer.
-    if (!t.lb && hit.album?.id) t.lb = (await deezer(`/album/${hit.album.id}`))?.label ?? '';
+    if (!t.lb) t.lb = lb;
   }
-  notes.push(`Popularity from Deezer for ${scored.length} of ${tracks.length} tracks.`);
-  if (unmatched.length) notes.push(`Not found on Deezer (popularity left as it was): ${unmatched.map((t) => `${t.n} by ${t.ar[0]}`).join('; ')}`);
+  notes.push(`Popularity and genres from Deezer for ${scored.length} of ${tracks.length} tracks.`);
+  if (unmatched.length) notes.push(`Not found on Deezer (popularity and genres left as they were): ${unmatched.map((t) => `${t.n} by ${t.ar[0]}`).join('; ')}`);
+  if (noGenre.length) notes.push(`Deezer has no genre for ${noGenre.length} tracks: ${noGenre.map((t) => `${t.n} by ${t.ar[0]}`).join('; ')}`);
 } catch (e) {
-  console.warn(`::warning::Deezer lookup failed (${e.message}); popularity left unchanged this run.`);
-  notes.push('Deezer lookup failed; popularity left unchanged this run.');
+  console.warn(`::warning::Deezer lookup failed (${e.message}); popularity and genres left unchanged this run.`);
+  notes.push('Deezer lookup failed; popularity and genres left unchanged this run.');
 }
 for (const t of tracks) delete t.isrc;
 
@@ -175,13 +180,13 @@ const now = new Set(tracks.map((t) => t.id));
 const added = tracks.filter((t) => !old.has(t.id)), removed = oldTracks.filter((t) => !now.has(t.id));
 const line = (t) => `${t.n} by ${t.ar.join(', ')} (${t.by})`;
 const noCountry = [...new Set(tracks.map((t) => t.ar[0]).filter((a) => a && !(a in countries)))];
-const blank = added.filter((t) => !t.lb || !t.g.length);
+const blank = added.filter((t) => !t.lb);
 
 const out = [`Playlist has ${tracks.length} tracks: ${added.length} added, ${removed.length} removed.`];
 added.forEach((t) => out.push(`- Added: ${line(t)}`));
 removed.forEach((t) => out.push(`- Removed: ${line(t)}`));
 if (noCountry.length) out.push(`Artists with no country in window.FC_COUNTRY (shown as "Unknown"): ${noCountry.join(', ')}`);
-if (blank.length) out.push(`New tracks with no label or no genres (Spotify no longer supplies them): ${blank.map((t) => t.n).join(', ')}`);
+if (blank.length) out.push(`New tracks with no label: ${blank.map((t) => t.n).join(', ')}`);
 out.push(...notes);
 console.log(out.join('\n'));
 if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, out.join('\n') + '\n');
