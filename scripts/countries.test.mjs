@@ -68,3 +68,10 @@ test('retries when MusicBrainz is busy', async () => {
   const r = await findCountry({ artist: 'Madi Diaz', title: 'x' });
   assert.equal(r.country, 'United States'); assert.ok(calls.length >= 3);
 });
+test('retries after a dropped connection', async () => {
+  calls = []; flaky = 0;
+  const real = globalThis.fetch; let dropped = 2;
+  globalThis.fetch = async (...a) => { if (dropped-- > 0) throw new TypeError('fetch failed'); return real(...a); };
+  try { const r = await findCountry({ artist: 'Madi Diaz', title: 'x' }); assert.equal(r.country, 'United States'); }
+  finally { globalThis.fetch = real; }
+});

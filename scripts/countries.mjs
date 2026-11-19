@@ -18,7 +18,14 @@ const mb = async (path, params = {}) => {
     const wait = lastRequest + DELAY - Date.now();
     if (wait > 0) await sleep(wait);
     lastRequest = Date.now();
-    const res = await fetch(`${BASE}${path}?${new URLSearchParams({ ...params, fmt: 'json' })}`, { headers: { 'User-Agent': UA, Accept: 'application/json' } });
+    let res;
+    try {
+      res = await fetch(`${BASE}${path}?${new URLSearchParams({ ...params, fmt: 'json' })}`, { headers: { 'User-Agent': UA, Accept: 'application/json' } });
+    } catch (e) {                                  // a dropped connection: try again before giving up
+      if (attempt === 3) throw e;
+      await sleep(DELAY ? 2000 * (attempt + 1) : 0);
+      continue;
+    }
     if (res.status === 503 || res.status === 429) { await sleep(DELAY ? 3000 * (attempt + 1) : 0); continue; }
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`MusicBrainz returned ${res.status}`);
