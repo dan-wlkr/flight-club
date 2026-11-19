@@ -7,6 +7,9 @@ on:
     # GitHub's schedules are best-effort and can be skipped, so a missed Thursday is picked up the next day.
     - cron: '7 4 * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/update-data.yml']
 
 permissions:
   contents: write
@@ -16,7 +19,22 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Read-only: compares MusicBrainz countries with the hand-kept list. Runs when this file is pushed.
+  audit-countries:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Compare MusicBrainz with the hand-kept countries
+        run: node scripts/audit-countries.mjs
+        env:
+          MB_CONTACT: ${{ vars.MB_CONTACT }}
+
   update:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +54,7 @@ jobs:
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
           SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          MB_CONTACT: ${{ vars.MB_CONTACT }}
       - name: Commit if changed
         if: steps.fresh.outputs.skip != 'true'
         run: |

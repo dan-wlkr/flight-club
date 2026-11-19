@@ -4,9 +4,10 @@
 // LASTFM_API_KEY is optional; without it popularity and genres come from Deezer alone.
 // Popularity and genres come from Last.fm, with Deezer as the fallback (Spotify stopped returning them). Tracks already in data.js
 // keep their label and curator name, so only new tracks cost
-// extra API calls and hand edits to existing rows survive. window.FC_COUNTRY is hand-maintained
-// and is written back untouched; window.FC_UPDATED is the time of this run, shown in the site footer; scripts/genre-overrides.json holds hand-set genres per artist; new lead artists without a country are listed in the output.
+// extra API calls and hand edits to existing rows survive. window.FC_COUNTRY is hand-maintained;
+// artists missing from it are looked up on MusicBrainz (scripts/countries.mjs) and added, never overwritten; window.FC_UPDATED is the time of this run, shown in the site footer; scripts/genre-overrides.json holds hand-set genres per artist; new lead artists without a country are listed in the output.
 import { readFile, writeFile, appendFile } from 'node:fs/promises';
+import { findCountry } from './countries.mjs';
 
 const PLAYLIST = process.env.SPOTIFY_PLAYLIST_ID || '1noTAUTrixdczkgwNdt3PN';
 const FILE = new URL('../data.js', import.meta.url);
@@ -238,7 +239,24 @@ try {
   console.warn(`::warning::Popularity and genre lookup failed (${e.message}); popularity and genres left unchanged this run.`);
   notes.push(`Popularity and genre lookup failed (${e.message}); both left unchanged this run.`);
 }
+const isrcOf = new Map(tracks.map((t) => [t.id, t.isrc]));
 for (const t of tracks) delete t.isrc;
+
+// ---- countries for artists missing from window.FC_COUNTRY ----
+// Spotify has no country data, so new lead artists are looked up on MusicBrainz. Anything already in the
+// list is never touched, so hand corrections always win. Every lookup is listed in the run summary to check.
+const missing = [...new Set(tracks.map((t) => t.ar[0]).filter((a) => a && !(a in countries)))];
+const looked = [], stuck = [];
+for (const artist of missing.slice(0, +process.env.MB_MAX || 25)) {
+  const t = tracks.find((x) => x.ar[0] === artist);
+  try {
+    const r = await findCountry({ artist, title: t.n, isrc: isrcOf.get(t.id) });
+    if (r.country) { countries[artist] = r.country; looked.push(`${artist} \u2192 ${r.country} (via ${r.via})`); }
+    else stuck.push(`${artist}: ${r.reason}`);
+  } catch (e) { stuck.push(`${artist}: lookup failed (${e.message})`); break; }   // stop on a service error rather than wait on every artist
+}
+if (looked.length) notes.push(`Countries looked up on MusicBrainz, please check: ${looked.join('; ')}. To correct one, edit window.FC_COUNTRY in data.js.`);
+if (stuck.length) notes.push(`Could not work out a country (shown as "Unknown" until added to window.FC_COUNTRY): ${stuck.join('; ')}`);
 
 // ---- report and write ----
 const now = new Set(tracks.map((t) => t.id));
