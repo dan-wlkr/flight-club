@@ -2,9 +2,14 @@ name: Update playlist data
 
 on:
   schedule:
-    # Thursdays 04:07 UTC: 4am UK time in winter, 5am in summer (cron has no time zones).
-    - cron: '7 4 * * 4'
+    # Tried every day at 04:07 UTC, but the work only happens once a week: the check below skips the
+    # run if data.js was already refreshed since Thursday 04:00 UTC (4am UK in winter, 5am in summer).
+    # GitHub's schedules are best-effort and can be skipped, so a missed Thursday is picked up the next day.
+    - cron: '7 4 * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/update-data.yml']
 
 permissions:
   contents: write
@@ -18,10 +23,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Check whether this week's update is already done
+        id: fresh
+        if: github.event_name == 'schedule'
+        run: bash scripts/data-is-current.sh >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v4
+        if: steps.fresh.outputs.skip != 'true'
         with:
           node-version: 22
       - name: Rebuild data.js from Spotify
+        if: steps.fresh.outputs.skip != 'true'
         run: node scripts/update-data.mjs
         env:
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
@@ -29,6 +40,7 @@ jobs:
           SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
       - name: Commit if changed
+        if: steps.fresh.outputs.skip != 'true'
         run: |
           if git diff --quiet -- data.js; then
             echo "No changes to data.js"
