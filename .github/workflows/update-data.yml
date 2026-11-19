@@ -7,9 +7,6 @@ on:
     # GitHub's schedules are best-effort and can be skipped, so a missed Thursday is picked up the next day.
     - cron: '7 4 * * *'
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ['.github/workflows/update-data.yml']
 
 permissions:
   contents: write
