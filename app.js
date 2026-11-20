@@ -446,7 +446,7 @@
     const solo = ['Genre', 'Country', 'Label', 'Decade'].includes(kick), ys = d3.extent(ts, (t) => t.year), split = PEOPLE.map((p) => [p, ts.filter((t) => t.by === p).length]).filter(([, n]) => n);
     return { kick, c, body: [
       h('h3', {}, title),
-      solo ? h('div', { class: 'solo one' }, h('b', {}, ts.length), h('span', {}, ts.length === 1 ? 'track' : 'tracks')) : h('div', { class: 'tiles' }, tile(ts.length, ts.length === 1 ? 'Track' : 'Tracks'), kick === 'Curator' ? null : tile(ys[0] === ys[1] ? ys[0] : `${ys[0]}–${String(ys[1]).slice(2)}`, 'Released'), tile(mmss(d3.sum(ts, (t) => t.secs)), 'Running time')),
+      solo ? h('div', { class: 'solo one' }, h('b', {}, ts.length), h('span', {}, ts.length === 1 ? 'track' : 'tracks')) : h('div', { class: 'tiles' }, tile(ts.length, ts.length === 1 ? 'Track' : 'Tracks'), kick === 'Selector' ? null : tile(ys[0] === ys[1] ? ys[0] : `${ys[0]}–${String(ys[1]).slice(2)}`, 'Released'), tile(mmss(d3.sum(ts, (t) => t.secs)), 'Running time')),
       ...extra,
       split.length > 1 || !c ? h('div', {}, h('h4', {}, 'Who added them'), h('div', { class: 'split' }, split.map(([p, n]) => h('span', { style: `--c:${col(p)};flex:${n}`, title: `${p}: ${n}` }, n)))) : null,
       h('div', {}, h('h4', {}, 'On the timeline'), mini(new Set(ts.map((t) => t.id)))),
@@ -455,7 +455,7 @@
   };
   const whoView = (p) => {
     const w = WHO[p], top = (m) => [...m].map(([k, v]) => [k, v.filter((t) => t.by === p).length]).filter(([, n]) => n).sort((a, b) => b[1] - a[1]).slice(0, 6);
-    return setView('Curator', p, w.mine, [
+    return setView('Selector', p, w.mine, [
       h('dl', { class: 'facts' },
         h('dt', {}, 'Oldest pick'), h('dd', {}, link(`${w.old.n} (${w.old.year})`, 'track-' + w.old.id, col(p))),
         h('dt', {}, 'Average release year'), h('dd', {}, w.avgYear),
