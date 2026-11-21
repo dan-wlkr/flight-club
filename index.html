@@ -95,7 +95,7 @@ h2.solo{margin-bottom:18px}
 .sq{transition:transform .27s var(--ease)}
 .curs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:14px}
 .cur{all:unset;box-sizing:border-box;cursor:pointer;background:var(--c);color:var(--on-c);padding:16px;display:flex;flex-direction:column;gap:4px}
-.cur .cn{text-transform:uppercase;letter-spacing:-.02em;font-size:clamp(20px,4.6vw,26px);font-weight:900;line-height:1;margin-bottom:2px}
+.cur .cn{letter-spacing:-.02em;font-size:clamp(20px,4.6vw,26px);font-weight:900;line-height:1;margin-bottom:2px}
 .cur .cb{font-weight:800;font-size:64px;line-height:.85;letter-spacing:-.05em;margin-top:10px;font-variant-numeric:tabular-nums}
 .cur .ct{line-height:1.2;min-height:3.4em}
 .cur .ct b{display:block;font-size:1.15em;font-weight:800;letter-spacing:-.01em}
@@ -145,6 +145,7 @@ footer{font-size:12px;opacity:.72;padding:4px 2px 0}
 }
 .db h3{margin:0;font-weight:900;text-transform:uppercase;font-size:clamp(30px,8vw,46px);line-height:.9;letter-spacing:-.04em;overflow-wrap:anywhere;text-wrap:balance}
 .db .by{font-family:var(--serif);font-size:20px;line-height:1.2;margin:-8px 0 0}
+.db h3.name{text-transform:none}
 .db h4{margin:0 0 4px;text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:700}
 .facts{margin:0;border-top:1px solid var(--ink);grid-template-columns:auto 1fr;gap:0 16px;font-size:14px}
 .facts dt,.facts dd{margin:0;padding:8px 0;border-bottom:1px solid var(--hair)}
@@ -328,7 +329,7 @@ h1 .w2{position:relative;z-index:4}
   <div class="stats headline" id="stats"></div>
 
   <section class="pn" id="s-curators">
-    <h2 class="solo">The selectors</h2>
+    <h2 class="solo">The curators</h2>
     <div class="curs" id="curators"></div>
   </section>
 
@@ -385,6 +386,6 @@ h1 .w2{position:relative;z-index:4}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <!-- The ?v= values make a new page fetch its matching script instead of a cached older one; bump the app.js one whenever app.js changes. -->
 <script src="data.js"></script>
-<script src="app.js?v=20261120a"></script>
+<script src="app.js?v=20261121a"></script>
 </body>
 </html>
