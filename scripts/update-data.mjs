@@ -8,6 +8,7 @@
 // artists missing from it are looked up on MusicBrainz (scripts/countries.mjs) and added, never overwritten; window.FC_UPDATED is the time of this run, shown in the site footer; scripts/genre-overrides.json holds hand-set genres per artist; new lead artists without a country are listed in the output.
 import { readFile, writeFile, appendFile } from 'node:fs/promises';
 import { findCountry } from './countries.mjs';
+import { cleanTitle } from './titles.mjs';
 
 const PLAYLIST = process.env.SPOTIFY_PLAYLIST_ID || '1noTAUTrixdczkgwNdt3PN';
 const FILE = new URL('../data.js', import.meta.url);
@@ -93,7 +94,7 @@ for (const { it, tr } of rows) {
   const g = was?.g ?? [], lb = was?.lb ?? '';
   tracks.push({
     id: tr.id,
-    n: tr.name,
+    n: cleanTitle(tr.name),          // without Spotify's release notes ("- Mono", "- 2016 Remaster"); see titles.mjs
     al: tr.album?.name ?? was?.al ?? '',
     ar: (tr.artists ?? []).map((a) => a.name),
     rd: tr.album?.release_date ?? was?.rd ?? '',
