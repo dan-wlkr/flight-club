@@ -239,7 +239,7 @@
     const rows = S.slice().sort((a, b) => b.p - a.p || a.n.localeCompare(b.n));
     const k = Math.min(10, Math.floor(rows.length / 2)), deep = popMode === 'deep';
     const items = deep ? rows.slice(-k).reverse() : rows.slice(0, k);
-    seg.replaceChildren(...[['top', 'Most popular'], ['deep', 'Deep cuts']].map(([m, label]) => h('button', { type: 'button', class: 'chip', 'aria-pressed': String(popMode === m), onclick: () => { popMode = m; drawPopularity(); } }, label)));
+    seg.replaceChildren(...[['top', 'Most popular'], ['deep', 'Deep cuts']].map(([m, label]) => h('button', { type: 'button', class: 'chip', 'aria-pressed': String(popMode === m), onclick: () => { popMode = m; settle(seg.closest('.pn')); drawPopularity(); } }, label)));
     el.replaceChildren(h('div', { class: 'pl' }, ...items.map((t, i) => h('button', { type: 'button', class: 'pr', 'data-p': t.by, style: `--c:${col(t.by)};--w:${Math.max(t.p, 1)}%`, onclick: () => go('track-' + t.id) },
       h('span', { class: 'rk' }, i + 1),
       h('span', { class: 'pt' }, h('b', {}, t.n), h('small', {}, t.artist)),
@@ -409,7 +409,10 @@
     $('#more').hidden = rows.length <= 8;
   };
 
-  const drawCharts = () => { [drawTimeline, drawWaffle, drawLengths, drawPopularity, drawClock, drawCountries, drawRanges, drawLabels, drawGenres].forEach((f) => { try { f(); } catch (e) { console.error(e); } }); drawRanges(); applyFilter(); };
+  // A panel keeps its 'play' class after its entrance, because taking it off restyles every mark at once and stutters the scroll.
+  // It comes off only when the chart is rebuilt anyway, so a redraw doesn't replay the entrance.
+  const settle = (el) => el && el.classList.remove('play');
+  const drawCharts = () => { $$('.pn.play').forEach(settle); [drawTimeline, drawWaffle, drawLengths, drawPopularity, drawClock, drawCountries, drawRanges, drawLabels, drawGenres].forEach((f) => { try { f(); } catch (e) { console.error(e); } }); drawRanges(); applyFilter(); };
 
   // ---------- detail drawer ----------
   const drawer = $('#drawer'), scrim = $('#scrim'), dbody = $('#dbody');
@@ -537,9 +540,13 @@
       sky.style.setProperty('--sw', cs.webkitTextStrokeWidth || '2px');
       sky.style.setProperty('--ph', Math.max(24, Math.min(58, parseFloat(cs.fontSize) * 0.3)).toFixed(1) + 'px');
     };
-    fit(); addEventListener('resize', fit); if (document.fonts) document.fonts.ready.then(fit);
+    // Sizes are measured once and again only when the width changes, so the flight itself never forces a layout mid-scroll.
+    let R = null, planeH = 30;
+    const measure = () => { fit(); planeH = plane.getBoundingClientRect().height || 30; R = route(); };
+    // Re-measure when the title or masthead actually changes size (a new width, the fonts arriving), never on scroll.
+    new ResizeObserver(() => measure()).observe(title); new ResizeObserver(() => measure()).observe(sky);
     const puff = (x, y, pair) => {
-      const ph = plane.getBoundingClientRect().height || 30, s = Math.max(7, ph * (pair ? 0.18 : 0.2)), el = h('span', { class: 'note', style: `left:${x - s}px;top:${y - s * 0.75}px;color:var(--p${n % 3});--r:${(Math.random() * 20 - 10).toFixed(1)}deg;--w:${(Math.random() < 0.5 ? -1 : 1) * 6}deg` });
+      const ph = planeH, s = Math.max(7, ph * (pair ? 0.18 : 0.2)), el = h('span', { class: 'note', style: `left:${x - s}px;top:${y - s * 0.75}px;color:var(--p${n % 3});--r:${(Math.random() * 20 - 10).toFixed(1)}deg;--w:${(Math.random() < 0.5 ? -1 : 1) * 6}deg` });
       el.innerHTML = NOTES[pair ? 1 : 0].replace('{s}', s.toFixed(1)).replace('{s2}', (s * 5 / 3).toFixed(1)).replace(/\{h\}/g, (s * 1.5).toFixed(1));
       if (!still) el.addEventListener('animationend', () => el.remove());
       sky.append(el);
@@ -557,15 +564,17 @@
       return { x, y, ang: Math.max(-28, Math.min(28, Math.atan2(dy, dx) * 180 / Math.PI * 0.9)), front: x < R.split };
     };
     const place = (R, p) => { fly.style.transform = `translate(${(p.x - R.pw / 2).toFixed(1)}px,${(p.y - R.ph / 2).toFixed(1)}px) rotate(${p.ang.toFixed(1)}deg)`;  };
+    measure();
     if (still) {
-      const R = route(), p = at(R, 0.6); p.ang = 0; place(R, p);
+      const p = at(R, 0.6); p.ang = 0; place(R, p);
       [0, 1, 2, 3].forEach((i) => puff(p.x - R.pw * 0.6 - i * R.pw * 0.4, p.y + (i % 2 ? -R.ph * 0.2 : R.ph * 0.1), i === 2));
       return;
     }
-    let t0 = performance.now(), beat = 0;
+    let t0 = performance.now(), beat = 0, onScreen = true, running = false;
     const BEAT = [340, 340, 830], gap = 3000;
     const loop = (now) => {
-      const R = route(), el = (now - t0) % (R.dur * 1000 + gap), u = Math.min(1, el / (R.dur * 1000)), p = at(R, u);
+      if (!onScreen) { running = false; return; }
+      const el = (now - t0) % (R.dur * 1000 + gap), u = Math.min(1, el / (R.dur * 1000)), p = at(R, u);
       place(R, p);
       if (!document.hidden && u < 1 && now >= beat) {
         const i = n++ % 3;
@@ -575,17 +584,25 @@
       }
       requestAnimationFrame(loop);
     };
-    requestAnimationFrame(loop);
+    const resume = () => { if (!running) { running = true; requestAnimationFrame(loop); } };
+    // Rest the plane while the masthead is scrolled out of view; it picks its flight up again when it comes back.
+    new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; if (onScreen) resume(); }).observe(box);
+    resume();
   };
 
-  const chipsEl = $('#chips'), stick = () => chipsEl.classList.toggle('stuck', chipsEl.getBoundingClientRect().top <= 0.5 && scrollY > 0);
-  addEventListener('scroll', stick, { passive: true }); addEventListener('resize', stick);
 
   addEventListener('keydown', () => { kbd = true; }, true); addEventListener('pointerdown', () => { kbd = false; }, true);
   document.addEventListener('click', (ev) => { const b = ev.target.closest('button, select'); if (b && ev.detail > 0 && b.tagName === 'BUTTON') b.blur(); });
 
   // ---------- start ----------
   drawHeader();
+  // The chips get their rule once they stick to the top. A marker riding just above them goes out of view at that moment,
+  // which an observer can watch far more cheaply than measuring on every scroll.
+  const chipsEl = $('#chips'), mark = document.createElement('span');
+  mark.setAttribute('aria-hidden', 'true');
+  mark.style.cssText = 'position:absolute;left:50%;top:-2px;width:1px;height:1px;pointer-events:none';
+  chipsEl.append(mark);
+  new IntersectionObserver(([e]) => chipsEl.classList.toggle('stuck', !e.isIntersecting && e.boundingClientRect.top < 0)).observe(mark);
   drawStats();
   fitTitle();
   drawCharts();
@@ -593,12 +610,11 @@
   $('#sort').addEventListener('change', () => { state.shown = 8; drawList(); });
   $('#more').addEventListener('click', () => { state.shown = state.shown >= $$('#list .row').length && $$('#list .row').length >= T.filter((t) => !state.who || t.by === state.who).length ? 8 : state.shown + 10; drawList(); });
   let lastW = innerWidth, timer;
-  addEventListener('resize', () => { clearTimeout(timer); timer = setTimeout(() => { fitTitle(); if (innerWidth !== lastW) { lastW = innerWidth; drawCharts(); } }, 150); });
+  addEventListener('resize', () => { clearTimeout(timer); timer = setTimeout(() => { if (innerWidth !== lastW) { lastW = innerWidth; fitTitle(); drawCharts(); } }, 150); });
   const io = new IntersectionObserver((entries) => entries.forEach((e) => {
     if (!e.isIntersecting) return;
     e.target.classList.add('play');
     io.unobserve(e.target);
-    setTimeout(() => e.target.classList.remove('play'), 4500);
   }), { threshold: 0.2 });
   route();
   // Hold the page back until the fonts are in, so the first visit doesn't jump about as they swap in; then fade in and start the motion.
