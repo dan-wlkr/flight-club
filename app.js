@@ -92,6 +92,8 @@
     $('#range').replaceChildren(h('span', { class: 'sl' }, 'Songs '), `#1 to #${T.length}`);
     const weeks = Math.floor((d3.max(S, (t) => +t.at) - d3.min(S, (t) => +t.at)) / 864e5 / 7) + 1;
     $('#weeks').textContent = weeks;
+    // The header's week number is for the whole playlist, so it doesn't change with the curator filter.
+    $('#weekno').textContent = 'Week ' + (Math.floor((d3.max(T, (t) => +t.at) - d3.min(T, (t) => +t.at)) / 864e5 / 7) + 1);
     const stats = [[S.length, 'Tracks'], [new Set(S.flatMap((t) => t.ar)).size, 'Artists'], [LABELS.size, 'Labels'], [hi - lo, 'Years']];
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
     $('#stats').replaceChildren(...stats.map(([n, l]) => {
