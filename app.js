@@ -505,13 +505,13 @@
     }
     if (!drawer.classList.contains('open')) lastFocus = document.activeElement;
     $('#dkick').textContent = v.kick;
-    drawer.style.setProperty('--c', v.c || 'var(--ink)');
-    drawer.style.setProperty('--on', v.c ? 'var(--on-c)' : 'var(--paper)');
+    drawer.style.setProperty('--c', v.c || 'var(--plain)');
+    drawer.style.setProperty('--on', v.c ? 'var(--on-c)' : 'var(--on-plain)');
     const back = stack.length ? h('button', { type: 'button', class: 'back', onclick: () => { goingBack = true; location.hash = stack.pop(); } }, '\u2190\u00a0\u00a0Go back') : null;
     dbody.replaceChildren(...[back, ...v.body].filter(Boolean));
     if (phone.matches) { if (!root.classList.contains('detail')) { pageY = scrollY; root.classList.add('detail'); } jump(0); }
     const cc = getComputedStyle(drawer).getPropertyValue('--c').trim();
-    setTheme(phone.matches ? (cc.startsWith('var(') ? getComputedStyle(root).getPropertyValue('--ink').trim() : cc) : '');
+    setTheme(phone.matches ? (cc.startsWith('var(') ? getComputedStyle(root).getPropertyValue('--plain').trim() : cc) : '');
     drawer.scrollTop = 0;
     drawer.classList.remove('open');
     void drawer.offsetWidth;

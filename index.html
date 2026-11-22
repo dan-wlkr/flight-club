@@ -26,7 +26,7 @@ html:not(.loading) .loader{opacity:0;visibility:hidden}
 @media (prefers-reduced-motion:reduce){.ld .nt{animation:none;opacity:.8;transform:translate(var(--x),var(--y))}}
 :root{
   /* One visual world: a printed data sheet. Paper, ink, three curator inks and a yellow for everything else. Single column of ruled panels, with a drawer for detail. */
-  --paper:#f3eee4;--paper-2:#ebe4d6;--ink:#151413;--p0:#e2462a;--p1:#2a57d4;--p2:#14855a;--sun:#f3b300;
+  --paper:#f3eee4;--paper-2:#ebe4d6;--ink:#151413;--plain:var(--ink);--on-plain:var(--paper);--p0:#e2462a;--p1:#2a57d4;--p2:#14855a;--sun:#f3b300;
   /* Text that sits on the curator colours or the yellow keeps its colour in both themes. */
   --on-c:#f3eee4;--on-sun:#151413;
   --hair:color-mix(in srgb,var(--ink) 26%,transparent);
@@ -281,7 +281,7 @@ h1 .w2{position:relative;z-index:4}
 @media (hover:hover){.back:hover{text-decoration:underline;text-underline-offset:4px}}
 /* Dark theme: follows the device setting. Same inks, off-white type on near-black paper. */
 @media (prefers-color-scheme:dark){
-:root{--paper:#0e0d0c;--paper-2:#1b1917;--ink:#e9e3d5}
+:root{--paper:#0e0d0c;--paper-2:#1b1917;--ink:#e9e3d5;--plain:#252220;--on-plain:var(--ink)}
 .scrim{background:rgba(0,0,0,.62)}
 .pn .tk select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%23e9e3d5' stroke-width='1.6'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E")}
 #c-genres g.hit:hover text,#c-genres g.hit:focus-visible text{fill:var(--paper)}
@@ -386,6 +386,6 @@ h1 .w2{position:relative;z-index:4}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <!-- The ?v= values make a new page fetch its matching script instead of a cached older one; bump the app.js one whenever app.js changes. -->
 <script src="data.js"></script>
-<script src="app.js?v=20261122e"></script>
+<script src="app.js?v=20261122f"></script>
 </body>
 </html>
