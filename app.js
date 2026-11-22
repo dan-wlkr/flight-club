@@ -462,7 +462,7 @@
     const w = WHO[p], top = (m) => [...m].map(([k, v]) => [k, v.filter((t) => t.by === p).length]).filter(([, n]) => n).sort((a, b) => b[1] - a[1]).slice(0, 6);
     return setView('Curator', p, w.mine, [
       h('dl', { class: 'facts' },
-        h('dt', {}, 'Oldest pick'), h('dd', {}, link(`${w.old.n} (${w.old.year})`, 'track-' + w.old.id, col(p))),
+        h('dt', {}, 'Oldest pick'), h('dd', { class: 'pick', title: `${w.old.n} (${w.old.year})` }, link([h('span', { class: 't' }, w.old.n), h('span', { class: 'y' }, ` (${w.old.year})`)], 'track-' + w.old.id, col(p))),
         h('dt', {}, 'Average release year'), h('dd', {}, w.avgYear),
         h('dt', {}, 'Favourite genre'), h('dd', {}, w.fav),
         h('dt', {}, 'Average length'), h('dd', {}, w.avg)),

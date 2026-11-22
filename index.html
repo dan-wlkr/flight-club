@@ -147,10 +147,16 @@ footer{font-size:12px;opacity:.72;padding:4px 2px 0}
 .db .by{font-family:var(--serif);font-size:20px;line-height:1.2;margin:-8px 0 0}
 .db h3.name{text-transform:none}
 .db h4{margin:0 0 4px;text-transform:uppercase;letter-spacing:.12em;font-size:11px;font-weight:700}
-.facts{margin:0;border-top:1px solid var(--ink);grid-template-columns:auto 1fr;gap:0 16px;font-size:14px}
+.facts{margin:0;border-top:1px solid var(--ink);grid-template-columns:auto minmax(0,1fr);gap:0;font-size:14px}
 .facts dt,.facts dd{margin:0;padding:8px 0;border-bottom:1px solid var(--hair)}
-.facts dt{text-transform:uppercase;letter-spacing:.08em;font-size:11px;font-weight:600;opacity:.72;display:flex;align-items:center}
-.facts dd{font-weight:600;text-align:right}
+.facts dt{text-transform:uppercase;letter-spacing:.08em;font-size:11px;font-weight:600;color:color-mix(in srgb,currentColor 72%,transparent);display:flex;align-items:center;white-space:nowrap;padding-right:16px}
+@media (max-width:359px){.facts dt{letter-spacing:.03em;padding-right:12px}}
+.facts dd{font-weight:600;text-align:right;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* A pick keeps its year in view; only the title gives way. */
+.facts dd.pick{display:flex;justify-content:flex-end}
+.facts dd.pick .lnk{display:inline-flex;min-width:0;max-width:100%}
+.facts dd.pick .lnk .t{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.facts dd.pick .lnk .y{flex:none;white-space:pre}
 .lnk{all:unset;cursor:pointer;font-weight:700;border-bottom:2px solid var(--c,var(--ink))}
 .tags{display:flex;flex-wrap:wrap;gap:6px}
 .tag{font-size:12px;font-weight:700;border:0;background:var(--sun);color:var(--on-sun);padding:5px 10px;cursor:pointer;transition:transform .22s}
@@ -386,6 +392,6 @@ h1 .w2{position:relative;z-index:4}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <!-- The ?v= values make a new page fetch its matching script instead of a cached older one; bump the app.js one whenever app.js changes. -->
 <script src="data.js"></script>
-<script src="app.js?v=20261122f"></script>
+<script src="app.js?v=20261122g"></script>
 </body>
 </html>
