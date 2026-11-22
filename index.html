@@ -174,6 +174,8 @@ footer{font-size:12px;opacity:.72;padding:4px 2px 0}
 @keyframes up{from{transform:translateY(18px);opacity:0}}
 @keyframes drop{from{transform:translateY(105%)}}
 @media (prefers-reduced-motion:no-preference){
+  /* Until a panel's entrance plays, its marks hold their starting pose, so they never show finished and then jump back to animate. */
+  .wait .a-rise{transform:scaleY(0)}.wait .a-pop{transform:scale(0)}.wait .a-grow{transform:scaleX(0)}.wait .a-spin{transform:scale(0)}.wait .a-up{transform:translateY(18px);opacity:0}
   .play .a-rise{animation:rise 1.12s var(--ease) backwards;animation-delay:calc(var(--i,0)*var(--st,8ms)*1.6)}
   .play .a-pop{animation:pop .8s var(--ease) backwards;animation-delay:calc(var(--i,0)*var(--st,8ms)*1.6)}
   .play .a-grow{animation:grow 1.12s var(--ease) backwards;animation-delay:calc(var(--i,0)*var(--st,40ms)*1.6)}
@@ -384,6 +386,6 @@ h1 .w2{position:relative;z-index:4}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <!-- The ?v= values make a new page fetch its matching script instead of a cached older one; bump the app.js one whenever app.js changes. -->
 <script src="data.js"></script>
-<script src="app.js?v=20261122d"></script>
+<script src="app.js?v=20261122e"></script>
 </body>
 </html>

@@ -379,9 +379,11 @@
     const root = d3.treemap().size([W, H]).paddingInner(innerWidth >= 960 ? 8 : 3).round(true)(d3.hierarchy({ children: rows }).sum((d) => d.n || 0));
     const g = svg.append('g').selectAll('g').data(root.leaves()).join('g').attr('transform', (d) => `translate(${d.x0},${d.y0})`).attr('class', 'hit')
       .attr('tabindex', 0).attr('role', 'link').on('click', (ev, d) => go('genre-' + slug(d.data.genre))).on('keydown', (ev, d) => { if (ev.key === 'Enter') go('genre-' + slug(d.data.genre)); });
-    g.append('rect').attr('width', (d) => d.x1 - d.x0).attr('height', (d) => d.y1 - d.y0).attr('class', 'a-pop').style('--i', (d, i) => i).style('--st', '45ms').style('fill', 'var(--sun)');
+    // Each tile pops in with its name and count, so the labels never show before their tile.
+    const tile = g.append('g').attr('class', 'a-pop').style('--i', (d, i) => i).style('--st', '45ms');
+    tile.append('rect').attr('width', (d) => d.x1 - d.x0).attr('height', (d) => d.y1 - d.y0).style('fill', 'var(--sun)');
     const fit = (d, words) => Math.min(14.5, (d.x1 - d.x0 - 11) / (d3.max(words, (w) => w.length) * 0.56));
-    g.each(function (d) {
+    tile.each(function (d) {
       const name = d.data.genre, hh = d.y1 - d.y0, avail = hh - (hh > 50 && d.x1 - d.x0 > 29 ? 26 : 0);
       // Later options break at hyphens too ("singer-" / "songwriter") for narrow tiles.
       const opts = [[name], name.replace(/hip hop/, 'hip\u00a0hop').split(' '), name.split(' '), name.split(/(?<=-)| /)];
@@ -397,7 +399,7 @@
       const fv = Math.min(14.5, d.x1 - d.x0 - 12, (avail - 10) / (name.length * 0.56));
       if (fv >= 8) d3.select(this).append('text').style('font-size', fv + 'px').style('font-weight', 700).attr('transform', `translate(${6 + fv * 0.25},6) rotate(90)`).text(name);
     });
-    g.filter((d) => d.y1 - d.y0 > 50 && d.x1 - d.x0 > 29).append('text').attr('x', 6).attr('y', (d) => d.y1 - d.y0 - 7).style('font-size', '22px').style('font-weight', 800).style('letter-spacing', '-0.04em').text((d) => d.data.n);
+    tile.filter((d) => d.y1 - d.y0 > 50 && d.x1 - d.x0 > 29).append('text').attr('x', 6).attr('y', (d) => d.y1 - d.y0 - 7).style('font-size', '22px').style('font-weight', 800).style('letter-spacing', '-0.04em').text((d) => d.data.n);
   };
 
   const SORTS = { added: (a, b) => b.at - a.at, old: (a, b) => a.when - b.when, new: (a, b) => b.when - a.when, long: (a, b) => b.secs - a.secs, short: (a, b) => a.secs - b.secs };
@@ -613,7 +615,7 @@
   addEventListener('resize', () => { clearTimeout(timer); timer = setTimeout(() => { if (innerWidth !== lastW) { lastW = innerWidth; fitTitle(); drawCharts(); } }, 150); });
   const io = new IntersectionObserver((entries) => entries.forEach((e) => {
     if (!e.isIntersecting) return;
-    e.target.classList.add('play');
+    e.target.classList.replace('wait', 'play') || e.target.classList.add('play');
     io.unobserve(e.target);
   }), { threshold: 0.2 });
   route();
@@ -623,7 +625,7 @@
     fitTitle(); drawCharts();
     const go = () => {
       document.documentElement.classList.remove('loading');
-      $$('.pn').forEach((s) => io.observe(s));
+      $$('.pn').forEach((s) => { s.classList.add('wait'); io.observe(s); });
       startPlane();
     };
     requestAnimationFrame(() => (window.fcDone ? window.fcDone(go) : go()));
