@@ -40,11 +40,11 @@ jobs:
       - name: Commit if changed
         if: steps.fresh.outputs.skip != 'true'
         run: |
-          if git diff --quiet -- data.js; then
-            echo "No changes to data.js"
+          if git diff --quiet -- data.js index.html; then
+            echo "No changes to data.js or index.html"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Update playlist data from Spotify" -- data.js
+          git commit -m "Update playlist data from Spotify" -- data.js index.html
           git push

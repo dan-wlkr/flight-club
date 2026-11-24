@@ -9,6 +9,7 @@
 import { readFile, writeFile, appendFile } from 'node:fs/promises';
 import { findCountry } from './countries.mjs';
 import { cleanTitle } from './titles.mjs';
+import { withShareDescription } from './share.mjs';
 
 const PLAYLIST = process.env.SPOTIFY_PLAYLIST_ID || '1noTAUTrixdczkgwNdt3PN';
 const FILE = new URL('../data.js', import.meta.url);
@@ -276,3 +277,7 @@ console.log(out.join('\n'));
 if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, out.join('\n') + '\n');
 
 await writeFile(FILE, `window.FC_TRACKS=${JSON.stringify(tracks)};\n\nwindow.FC_COUNTRY=${JSON.stringify(countries)};\n\nwindow.FC_UPDATED=${JSON.stringify(new Date().toISOString().slice(0, 19) + 'Z')};\n`);
+
+// The link preview's description shows the current week ("Week 17 · A shared playlist").
+const PAGE = new URL('../index.html', import.meta.url), page = await readFile(PAGE, 'utf8'), shared = withShareDescription(page, tracks);
+if (shared !== page) await writeFile(PAGE, shared);
