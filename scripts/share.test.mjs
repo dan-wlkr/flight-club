@@ -13,14 +13,14 @@ test('counts weeks like the site', () => {
   assert.equal(weekOf([{ at: 'not a date' }]), null);
 });
 
-test('falls back to the plain line without a week', () => {
-  assert.equal(shareDescription(17), 'Week 17 · A shared playlist');
-  assert.equal(shareDescription(null), 'A shared playlist');
+test('matches the masthead, or the plain line without a week', () => {
+  assert.equal(shareDescription(17, 102), 'Week 17 | Songs #1 to #102');
+  assert.equal(shareDescription(null, 0), 'A shared playlist');
 });
 
 test('rewrites only the og:description tag', () => {
   const html = '<meta name="description" content="Keep me">\n<meta property="og:description" content="Old text">\n';
   const out = withShareDescription(html, [t('2026-07-29T09:00:00Z'), t('2026-11-19T09:00:00Z')]);
-  assert.equal(out, '<meta name="description" content="Keep me">\n<meta property="og:description" content="Week 17 · A shared playlist">\n');
+  assert.equal(out, '<meta name="description" content="Keep me">\n<meta property="og:description" content="Week 17 | Songs #1 to #2">\n');
   assert.equal(withShareDescription('<p>no tag</p>', []), '<p>no tag</p>');
 });

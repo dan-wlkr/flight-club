@@ -278,6 +278,6 @@ if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SU
 
 await writeFile(FILE, `window.FC_TRACKS=${JSON.stringify(tracks)};\n\nwindow.FC_COUNTRY=${JSON.stringify(countries)};\n\nwindow.FC_UPDATED=${JSON.stringify(new Date().toISOString().slice(0, 19) + 'Z')};\n`);
 
-// The link preview's description shows the current week ("Week 17 · A shared playlist").
+// The link preview's description matches the masthead ("Week 17 | Songs #1 to #102").
 const PAGE = new URL('../index.html', import.meta.url), page = await readFile(PAGE, 'utf8'), shared = withShareDescription(page, tracks);
 if (shared !== page) await writeFile(PAGE, shared);
