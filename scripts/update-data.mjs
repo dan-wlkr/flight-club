@@ -167,11 +167,13 @@ const lastfm = async (method, params) => {
   }
   throw new Error('Last.fm is not responding');
 };
+// Tags that mention a year or a festival ("sxsw 2008", "best of 2019") describe an event or a list, not a sound.
+const NOT_GENRE_BITS = /\b(19|20)\d{2}\b|\b(sxsw|coachella|glastonbury|lollapalooza|primavera|pitchfork|bbc)\b/;
 const pickTags = (body, names) => {
   const seen = new Set(names.map(norm)), out = [];
   for (const tag of body?.toptags?.tag ?? []) {
     const raw = String(tag.name).toLowerCase().trim(), name = ALIAS[raw] ?? raw, key = norm(name);
-    if (!key || seen.has(key) || NOT_GENRES.test(name) || name.length > 30) continue;
+    if (!key || seen.has(key) || NOT_GENRES.test(name) || NOT_GENRE_BITS.test(name) || name.length > 30) continue;
     if (out.length && +tag.count < 25) break; // tags arrive strongest first, scored 0-100
     seen.add(key);
     out.push(name);
