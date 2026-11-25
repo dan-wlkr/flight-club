@@ -1,4 +1,12 @@
 {
-  "Friendship": ["alt-country", "indie rock"],
-  "Fine": ["dream pop"]
+  "Friendship": [
+    "alt-country",
+    "indie rock"
+  ],
+  "Fine": [
+    "dream pop"
+  ],
+  "Threshold": [
+    "indie"
+  ]
 }
