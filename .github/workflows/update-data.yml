@@ -7,6 +7,10 @@ on:
     # GitHub's schedules are best-effort and can be skipped, so a missed Thursday is picked up the next day.
     - cron: '7 4 * * *'
   workflow_dispatch:
+  # TEMPORARY: lets a push run the update on demand (manual runs can't be started from here). Removed straight after.
+  push:
+    branches: [main]
+    paths: ['.github/workflows/update-data.yml']
 
 permissions:
   contents: write
@@ -47,4 +51,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Update playlist data from Spotify" -- data.js index.html
+          # Pick up anything pushed while this ran, so the push isn't rejected as out of date.
+          git pull --rebase origin main
           git push
